@@ -18,6 +18,7 @@ class BaselineModel(nn.Module):
 
         self.net = Sequential(
             # people say it can approximate any function...
+            nn.Flatten(),
             nn.Linear(in_features=n_feats, out_features=fc_hidden),
             nn.ReLU(),
             nn.Linear(in_features=fc_hidden, out_features=fc_hidden),
@@ -25,7 +26,7 @@ class BaselineModel(nn.Module):
             nn.Linear(in_features=fc_hidden, out_features=n_class),
         )
 
-    def forward(self, data_object, **batch):
+    def forward(self, img, **batch):
         """
         Model forward method.
 
@@ -34,7 +35,7 @@ class BaselineModel(nn.Module):
         Returns:
             output (dict): output dict containing logits.
         """
-        return {"logits": self.net(data_object)}
+        return {"logits": self.net(img)}
 
     def __str__(self):
         """

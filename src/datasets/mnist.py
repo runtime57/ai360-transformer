@@ -17,13 +17,13 @@ class MnistDatasset(BaseDataset):
             index = read_json(index_path)
         else:
             index = self._create_index(name)
-        self.super().__init__(index, *args, **kwargs)
+        super().__init__(index, *args, **kwargs)
 
     def _create_index(self, name):
         index = []
         data_path = ROOT_PATH / "data" / "minst" / name
         data_path.mkdir(parents=True, exist_ok = True)
-        transform = torchvision.transforms.ToTensors()
+        transform = torchvision.transforms.ToTensor()
         mnist_data = torchvision.datasets.MNIST(
             str(data_path), train=(name == "train"), download=True, transform=transform
         )
