@@ -1,0 +1,3 @@
+_target_: src.model.ResNet
+input_channels: 1
+n_class: 10
