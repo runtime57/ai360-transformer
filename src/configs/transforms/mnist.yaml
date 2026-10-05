@@ -1,0 +1,10 @@
+instance_transforms:
+  train:
+    data_object:
+      _target_: torchvision.transforms.Normalize
+      mean: [0.1307]
+      std: [0.3081]
+  inference: ${transforms.instance_transforms.train}
+batch_transforms:
+  train: null
+  inference: null

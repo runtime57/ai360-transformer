@@ -1,0 +1,16 @@
+train:
+  _target_: src.datasets.MNISTDataset
+  split: train
+  root: ${data_dir}
+  download: ${download_data}
+  val_size: ${val_size}
+  split_seed: ${split_seed}
+  instance_transforms: ${transforms.instance_transforms.train}
+val:
+  _target_: src.datasets.MNISTDataset
+  split: val
+  root: ${data_dir}
+  download: ${download_data}
+  val_size: ${val_size}
+  split_seed: ${split_seed}
+  instance_transforms: ${transforms.instance_transforms.inference}

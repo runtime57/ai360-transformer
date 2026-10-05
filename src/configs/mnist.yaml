@@ -1,0 +1,41 @@
+defaults:
+  - model: mnist
+  - writer: wandb
+  - datasets: mnist
+  - dataloader: mnist
+  - transforms: mnist
+  - loss_function: cross_entropy
+  - metrics: mnist
+  - _self_
+
+data_dir: data/mnist
+download_data: true
+val_size: 5000
+split_seed: 42
+
+writer:
+  project_name: mnist
+  run_name: mnist_mlp
+  mode: offline
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 0.001
+lr_scheduler:
+  _target_: torch.optim.lr_scheduler.StepLR
+  step_size: 1000
+  gamma: 0.9
+
+trainer:
+  log_step: 50
+  n_epochs: 10
+  epoch_len: null
+  device_tensors: [data_object, labels]
+  resume_from: null
+  device: auto
+  override: false
+  monitor: max val_accuracy
+  save_period: 1
+  early_stop: 3
+  save_dir: saved
+  seed: 42

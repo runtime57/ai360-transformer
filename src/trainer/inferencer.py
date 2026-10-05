@@ -124,13 +124,13 @@ class Inferencer(BaseTrainer):
 
         if metrics is not None:
             for met in self.metrics["inference"]:
-                metrics.update(met.name, met(**batch))
+                metrics.update(met.name, met(**batch), n=batch["labels"].shape[0])
 
         # Some saving logic. This is an example
         # Use if you need to save predictions on disk
 
         batch_size = batch["logits"].shape[0]
-        current_id = batch_idx * batch_size
+        current_id = batch_idx * self.evaluation_dataloaders[part].batch_size
 
         for i in range(batch_size):
             # clone because of

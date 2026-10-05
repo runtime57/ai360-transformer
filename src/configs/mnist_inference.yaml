@@ -1,0 +1,17 @@
+defaults:
+  - model: mnist
+  - datasets: mnist_eval
+  - dataloader: mnist
+  - transforms: mnist
+  - metrics: mnist
+  - _self_
+
+data_dir: data/mnist
+download_data: true
+
+inferencer:
+  device_tensors: [data_object, labels]
+  device: auto
+  save_path: mnist
+  seed: 42
+  from_pretrained: saved/mnist_mlp/model_best.pth

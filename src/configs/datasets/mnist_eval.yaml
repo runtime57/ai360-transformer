@@ -1,0 +1,6 @@
+test:
+  _target_: src.datasets.MNISTDataset
+  split: test
+  root: ${data_dir}
+  download: ${download_data}
+  instance_transforms: ${transforms.instance_transforms.inference}
