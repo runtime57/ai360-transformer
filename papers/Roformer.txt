@@ -1,0 +1,30 @@
+1. Название статьи: RoFormer: Enhanced Transformer with Rotary Position Embedding
+
+2. Авторы: 
+Jianlin Su (Zhuiyi Technology Co., Ltd.)
+Yu Lu (Zhuiyi Technology Co., Ltd.)
+Shengfeng Pan (Zhuiyi Technology Co., Ltd.)
+Ahmed Murtadha (Zhuiyi Technology Co., Ltd.)
+Bo Wen (Zhuiyi Technology Co., Ltd.)
+Yunfeng Liu (Zhuiyi Technology Co., Ltd.)
+
+3. Место публикации и год: Neurocomputing, 2021
+
+4. Код: https://github.com/ZhuiyiTechnology/roformer (official)
+
+5. Задача: улучшение метода позиционных эмбеддингов в трансформерах
+
+6. Датасеты: 
+1) WMT 2014English-German
+2) GLUE
+3) Chinese Wikipedia, news and forums (train), CAIL2019-SCM (test)
+
+7. Метрики качества:
+1) BLEU
+2) F1-score, spearman correlation, accuracy 
+3) accuracy
+
+8. Метрики сложности: отсутствуют
+
+9. Общий комментарий: 
+TODO
