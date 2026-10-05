@@ -128,6 +128,25 @@ To run inference (evaluate the model or save predictions):
 python3 inference.py HYDRA_CONFIG_ARGUMENTS
 ```
 
+### Tokenizer hook
+
+The `tokenizer` Hydra config group is optional, so non-language projects do not
+instantiate or depend on a tokenizer. To add a tokenizer, create its class in
+`src/tokenizers` and a corresponding Hydra config in `src/configs/tokenizer`.
+The class should subclass `BaseTokenizer` and implement `train`, `encode`, and
+`decode`. Algorithm-specific state can be persisted by overriding
+`_get_model_state` and `_load_model_state`. At the end of `train`, call
+`_set_vocabulary` so that both token lookup tables are initialized.
+
+Select the new config explicitly with `tokenizer=CONFIG_NAME`. On the first
+training run, `train.py` reads `tokenizer.train_corpus_path`, builds a
+vocabulary, and writes `tokenizer.vocab_path`. Later runs load that file.
+`inference.py tokenizer=CONFIG_NAME` only loads an existing vocabulary and
+fails if it is missing.
+
+Plain-text corpora are read one non-empty line at a time. For JSONL, also set
+`tokenizer.text_field` to the field containing text.
+
 ## Useful Links:
 
 You may find the following links useful:

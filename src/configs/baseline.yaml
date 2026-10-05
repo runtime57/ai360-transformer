@@ -5,6 +5,7 @@ defaults:
   - datasets: example
   - dataloader: example
   - transforms: example
+  - tokenizer: null # optional; select one explicitly for LM projects
   - _self_
 optimizer:
   _target_: torch.optim.Adam

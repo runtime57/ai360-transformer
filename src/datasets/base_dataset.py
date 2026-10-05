@@ -18,7 +18,12 @@ class BaseDataset(Dataset):
     """
 
     def __init__(
-        self, index, limit=None, shuffle_index=False, instance_transforms=None
+        self,
+        index,
+        limit=None,
+        shuffle_index=False,
+        instance_transforms=None,
+        tokenizer=None,
     ):
         """
         Args:
@@ -32,6 +37,8 @@ class BaseDataset(Dataset):
             instance_transforms (dict[Callable] | None): transforms that
                 should be applied on the instance. Depend on the
                 tensor name.
+            tokenizer (BaseTokenizer | None): tokenizer shared by all dataset
+                partitions. Text datasets can use it in ``__getitem__``.
         """
         self._assert_index_is_valid(index)
 
@@ -39,6 +46,11 @@ class BaseDataset(Dataset):
         self._index: List[dict] = index
 
         self.instance_transforms = instance_transforms
+        self.tokenizer = tokenizer
+
+    def set_tokenizer(self, tokenizer):
+        """Attach an initialized tokenizer to the dataset."""
+        self.tokenizer = tokenizer
 
     def __getitem__(self, ind):
         """

@@ -43,7 +43,22 @@ def move_batch_transforms_to_device(batch_transforms, device):
                 transforms[transform_name] = transforms[transform_name].to(device)
 
 
-def get_dataloaders(config, device):
+def _set_tokenizer(dataset, tokenizer):
+    """Attach one tokenizer to a dataset and any nested datasets."""
+    if tokenizer is None:
+        return
+
+    if hasattr(dataset, "datasets"):
+        for nested_dataset in dataset.datasets:
+            _set_tokenizer(nested_dataset, tokenizer)
+
+    if hasattr(dataset, "set_tokenizer"):
+        dataset.set_tokenizer(tokenizer)
+    else:
+        dataset.tokenizer = tokenizer
+
+
+def get_dataloaders(config, device, tokenizer=None):
     """
     Create dataloaders for each of the dataset partitions.
     Also creates instance and batch transforms.
@@ -51,6 +66,8 @@ def get_dataloaders(config, device):
     Args:
         config (DictConfig): hydra experiment config.
         device (str): device to use for batch transforms.
+        tokenizer (BaseTokenizer | None): initialized tokenizer shared by
+            all dataset partitions.
     Returns:
         dataloaders (dict[DataLoader]): dict containing dataloader for a
             partition defined by key.
@@ -64,6 +81,8 @@ def get_dataloaders(config, device):
 
     # dataset partitions init
     datasets = instantiate(config.datasets)  # instance transforms are defined inside
+    for dataset in datasets.values():
+        _set_tokenizer(dataset, tokenizer)
 
     # dataloaders init
     dataloaders = {}

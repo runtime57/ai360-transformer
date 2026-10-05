@@ -24,6 +24,14 @@ def main(config):
     """
     set_random_seed(config.inferencer.seed)
 
+    tokenizer = None
+    tokenizer_config = config.get("tokenizer")
+    if tokenizer_config is not None:
+        from src.tokenizers import init_tokenizer
+
+        # Inference may load a vocabulary but must never fit one on evaluation data.
+        tokenizer = init_tokenizer(tokenizer_config, allow_build=False)
+
     if config.inferencer.device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
     else:
@@ -31,7 +39,7 @@ def main(config):
 
     # setup data_loader instances
     # batch_transforms should be put on device
-    dataloaders, batch_transforms = get_dataloaders(config, device)
+    dataloaders, batch_transforms = get_dataloaders(config, device, tokenizer)
 
     # build model architecture, then print to console
     model = instantiate(config.model).to(device)
