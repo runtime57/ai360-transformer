@@ -27,6 +27,10 @@ class TransformerDecoder(nn.Module):
             num_layers=num_layers
         )
 
+    def _set_context(self, vocab_size, **context):
+        self.vocab_size = vocab_size
+        self.token_embedding = nn.Embedding(vocab_size, self.d_model)
+
     def forward(self, seq, **batch):
         # seq: [B, L] (already tokenized)
 
@@ -64,11 +68,19 @@ class TransformerDecoder(nn.Module):
 
 
 class GPT(nn.Module):
-    def __init__(self, decoder, tokenizer, beam_width=1, max_output_tokens=1024):
+    def __init__(self, decoder, tokenizer=None, beam_width=1, max_output_tokens=1024):
         super().__init__()
 
         self.decoder = decoder
         self.tokenizer = tokenizer
+
+    def _set_tokenizer(self, tokenizer):
+        self.tokenizer = tokenizer
+
+    def _set_context(self, **context):
+        if hasattr(self.decoder, "_set_context"):
+            self.decoder._set_context(**context)
+
 
     def forward(self, seq, **batch):
         # seq: [B, L] (already tokenized)
@@ -78,5 +90,4 @@ class GPT(nn.Module):
     # def predict(self, seq, **batch):
     #     # seq: [1, L] (already tokenized) ?
 
-    #     logits = self.model(seq, **batch)
-        
+    #     logits = self.decoder(seq, **batch)

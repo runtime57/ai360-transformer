@@ -11,8 +11,12 @@ from src.utils.init_utils import set_random_seed, setup_saving_and_logging
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
+def set_context(object, context):
+    if context is not None and hasattr(object, "_set_context"):
+        object._set_context(**context)
 
-@hydra.main(version_base=None, config_path="src/configs", config_name="baseline")
+
+@hydra.main(version_base=None, config_path="src/configs", config_name="train")
 def main(config):
     """
     Main script for training. Instantiates the model, optimizer, scheduler,
@@ -40,30 +44,38 @@ def main(config):
     else:
         device = config.trainer.device
 
-    # setup data_loader instances
-    # batch_transforms should be put on device
-    dataloaders, batch_transforms = get_dataloaders(config, device, tokenizer)
+    dataloaders, batch_transforms, context = get_dataloaders(config, device, tokenizer)
+    train_context = context.get("train")
 
-    # build model architecture, then print to console
     model = instantiate(config.model).to(device)
+    set_context(model, train_context)
+
+    if tokenizer is not None and hasattr(model, "_set_tokenizer"):
+        model._set_tokenizer(tokenizer)
+
     logger.info(model)
 
-    # get function handles of loss and metrics
-    loss_function = instantiate(config.loss_function).to(device)
+    loss = instantiate(config.loss).to(device)
+    set_context(loss, train_context)
+
     metrics = instantiate(config.metrics)
 
-    # build optimizer, learning rate scheduler
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = instantiate(config.optimizer, params=trainable_params)
-    lr_scheduler = instantiate(config.lr_scheduler, optimizer=optimizer)
 
-    # epoch_len = number of iterations for iteration-based training
-    # epoch_len = None or len(dataloader) for epoch-based training
     epoch_len = config.trainer.get("epoch_len")
+    real_epoch_len = epoch_len if epoch_len is not None else len(dataloaders['train'])
+    total_steps = config.trainer.n_epochs * real_epoch_len
+
+    if config.get("lr_scheduler") is not None:
+        config.lr_scheduler['steps'] = total_steps
+        lr_scheduler = instantiate(config.lr_scheduler, optimizer=optimizer)
+    else:
+        lr_scheduler = None
 
     trainer = Trainer(
         model=model,
-        criterion=loss_function,
+        criterion=loss,
         metrics=metrics,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,

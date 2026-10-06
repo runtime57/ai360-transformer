@@ -9,6 +9,10 @@ class CrossEntropyLoss(nn.Module):
         self.temperature = temperature
         self.label_smoothing = label_smoothing
 
+    def _set_context(self, ignore_class_id, **context):
+        self.ignore_class_id = ignore_class_id
+
+
     def forward(self, logits, target, **batch):
         # logits: [B, L, N]
         # target: [B, L]

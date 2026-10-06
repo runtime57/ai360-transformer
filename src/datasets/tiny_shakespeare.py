@@ -4,9 +4,10 @@ from src.utils.io_utils import ROOT_PATH, read_txt, write_txt
 
 
 class ShakespeareDataset:
-    def __init__(self, part, max_seq_len, val_ratio, tokenizer, override=False, raw_data_path=None, processed_dir_path=None, transforms=None):
+    def __init__(self, part, max_seq_len, val_ratio, tokenizer=None, override=False, raw_data_path=None, processed_dir_path=None, transforms=None):
         assert part in ['train', 'val']
 
+        self.part = part
         self.max_seq_len = max_seq_len
         self.transforms = transforms
 
@@ -19,11 +20,10 @@ class ShakespeareDataset:
         if override or not self.processed_file_path.exists():
             self._preprocess(val_ratio, raw_data_path, processed_dir_path)
 
-        text = read_txt(str(self.processed_file_path))
-
         self.tokenizer = tokenizer
-        tokens = torch.as_tensor(self.tokenizer.encode(text), dtype=torch.long)
-        self.tokens = self._split_by_maxlen(tokens, max_seq_len + 1)
+        if self.tokenizer is not None:
+            tokens = torch.as_tensor(self.tokenizer.encode(read_txt(self.processed_file_path)), dtype=torch.long)
+            self.tokens = self._split_by_maxlen(tokens, max_seq_len + 1)
 
     def __len__(self):
         return self.tokens.shape[0]
@@ -52,10 +52,15 @@ class ShakespeareDataset:
 
     def _set_tokenizer(self, tokenizer):
         self.tokenizer = tokenizer
-        self.tokenizer = tokenizer
         tokens = torch.as_tensor(self.tokenizer.encode(read_txt(self.processed_file_path)), dtype=torch.long)
         self.tokens = self._split_by_maxlen(tokens, self.max_seq_len + 1)
 
+    def _get_context(self):
+        return {
+            "part": self.part,
+            "vocab_size": len(self.tokenizer.id_to_token),
+            "ignore_class_id": self.tokenizer.token_to_id['<pad>']
+        }
 
     def preprocess_data(self, instance_data):
         if self.transforms is not None:
