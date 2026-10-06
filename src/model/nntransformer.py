@@ -3,20 +3,21 @@ import torch, math
 
 class nnTransformer(nn.Module):
 
-    def __init__(self, heads=4, dmodel=256, enclayers=4, declayers=4, ffdim=1024,
+    def __init__(self, heads=4, dmodel=256, ffdim=1024,
                   vocabsize=65, max_len=512):
+        super().__init__()
         self.src_emb = nn.Embedding(vocabsize, dmodel)
         self.tgt_emb = nn.Embedding(vocabsize, dmodel)
         self.pos_emb = nn.Embedding(max_len, dmodel)
         self.d_model = dmodel
-        self.transformer = nn.Transformer(dmodel=dmodel, 
-                                          nhead=heads, 
-                                          num_encoder_layers=enclayers, 
-                                          num_decoder_layers=declayers,
-                                          dim_feedforward=ffdim)
+        layer = nn.TransformerDecoderLayer(
+            d_model=dmodel,
+            nhead=heads,
+            dim_feedforward=ffdim
+        )
+        self.transformer = nn.TransformerDecoder(decoder_layer=layer, num_layers=1)
         self.out = nn.Linear(dmodel, vocabsize)
-        super().__init__()
-
+        
     def _embed(self, tokens, emb):
         pos = torch.arange(tokens.size(1), device=tokens.device)
         return emb(tokens) * math.sqrt(self.d_model) + self.pos_emb(pos)

@@ -42,11 +42,12 @@ class TinyTextDataset(BaseDataset):
         index = []
         data_path = ROOT_PATH / "data" / "tinytext" / name
         data_path.mkdir(exist_ok=True, parents=True)
-        write_json(index, str(data_path / "index.json"))
         url = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
         text = urllib.request.urlopen(url).read().decode()
+        assert len(text)>100
         chars = set(text)
         ch_to_int = {c: i for i , c in enumerate(chars)}
         for c in text:
             index.append({"token":ch_to_int[c], "value":c})
+        write_json(index, str(data_path / "index.json"))
         return index
