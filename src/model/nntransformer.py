@@ -13,7 +13,8 @@ class nnTransformer(nn.Module):
         layer = nn.TransformerEncoderLayer(
             d_model=dmodel,
             nhead=heads,
-            dim_feedforward=ffdim
+            dim_feedforward=ffdim,
+            batch_first=True
         )
         self.transformer = nn.TransformerEncoder(encoder_layer=layer, num_layers=1)
         self.out = nn.Linear(dmodel, vocabsize)
@@ -22,14 +23,13 @@ class nnTransformer(nn.Module):
         pos = torch.arange(tokens.size(1), device=tokens.device)
         return emb(tokens) * math.sqrt(self.d_model) + self.pos_emb(pos)
 
-    def forward(self, src, **batch):
+    def forward(self, token, **batch):
         tgt_mask = nn.Transformer.generate_square_subsequent_mask(
-            src.size(1), device=src.device)
+            token.size(1), device=token.device)
         h = self.transformer(
-            src = self._embed(src, self.tgt_emb),
+            src = self._embed(token, self.tgt_emb),
             mask=tgt_mask,
-            src_key_padding_mask=tgt_mask,
-            batch_first=True)
+            )
         return {"logits": self.out(h)}
 
     

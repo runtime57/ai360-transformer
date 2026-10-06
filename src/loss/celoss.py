@@ -29,4 +29,5 @@ class CELoss(nn.Module):
         Returns:
             losses (dict): dict containing calculated loss functions.
         """
-        return {"loss": self.loss(logits, labels)}
+        V = logits.size(-1)
+        return {"loss": self.loss(logits.reshape(-1, V), labels.reshape(-1))}
