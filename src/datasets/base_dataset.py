@@ -19,7 +19,7 @@ class BaseDataset(Dataset):
 
     def __init__(
         self, index, limit=None, shuffle_index=False, instance_transforms=None,
-        block_size=512
+        block_size=512, step = 256,
     ):
         """
         Args:
@@ -41,6 +41,7 @@ class BaseDataset(Dataset):
         self.instance_transforms = instance_transforms
 
         self.block_size = block_size
+        self.step = step
         self._tokens = torch.tensor(
             [d["token"] for d in self._index], dtype=torch.long
         )
@@ -60,7 +61,8 @@ class BaseDataset(Dataset):
             instance_data (dict): dict, containing instance
                 (a single dataset element).
         """
-        window = self._tokens[ind : ind + self.block_size + 1]
+        start = ind * self.step
+        window = self._tokens[start : start + self.block_size + 1]
         instance_data = {"token": window}
         instance_data = self.preprocess_data(instance_data)
         return instance_data
@@ -69,7 +71,7 @@ class BaseDataset(Dataset):
         """
         Get length of the dataset (length of the index).
         """
-        return len(self._tokens) - self.block_size
+        return (len(self._tokens) - self.block_size - 1) // self.step
 
     def load_object(self, path):
         """
