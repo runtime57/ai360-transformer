@@ -34,7 +34,7 @@ class BaselineModel(nn.Module):
         Returns:
             output (dict): output dict containing logits.
         """
-        return {"logits": self.net(data_object)}
+        return {"logits": self.net(data_object.flatten(1))}
 
     def __str__(self):
         """

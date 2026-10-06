@@ -1,0 +1,10 @@
+train:
+  _target_: src.datasets.MnistDataset
+  name: 'train'
+  shuffle_index: True
+  instance_transforms: ${transforms.instance_transforms.train}
+test:
+  _target_: src.datasets.MnistDataset
+  name: 'test'
+  shuffle_index: True
+  instance_transforms: ${transforms.instance_transforms.inference}

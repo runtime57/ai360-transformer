@@ -1,10 +1,10 @@
 defaults:
-  - model: baseline
-  - writer: wandb
+  - model: mnist_mlp
+  - writer: cometml
   - metrics: example
-  - datasets: example
-  - dataloader: example
-  - transforms: example
+  - datasets: mnist
+  - dataloader: mnist_dl
+  - transforms: mnist
   - tokenizer: null # optional; select one explicitly for LM projects
   - _self_
 optimizer:
@@ -12,14 +12,14 @@ optimizer:
   lr: 3e-4
 lr_scheduler:
   _target_: torch.optim.lr_scheduler.StepLR
-  gamma: 0.9
+  gamma: 0.97
   step_size: ${trainer.epoch_len}
 loss_function:
   _target_: src.loss.ExampleLoss
 trainer:
   log_step: 10
   n_epochs: 100
-  epoch_len: 500
+  epoch_len: 469
   device_tensors: ["data_object", "labels"] # which tensors should be on device (ex. GPU)
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
   device: auto # device name or "auto"
