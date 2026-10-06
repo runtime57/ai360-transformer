@@ -10,27 +10,26 @@ class nnTransformer(nn.Module):
         self.tgt_emb = nn.Embedding(vocabsize, dmodel)
         self.pos_emb = nn.Embedding(max_len, dmodel)
         self.d_model = dmodel
-        layer = nn.TransformerDecoderLayer(
+        layer = nn.TransformerEncoderLayer(
             d_model=dmodel,
             nhead=heads,
             dim_feedforward=ffdim
         )
-        self.transformer = nn.TransformerDecoder(decoder_layer=layer, num_layers=1)
+        self.transformer = nn.TransformerEncoder(encoder_layer=layer, num_layers=1)
         self.out = nn.Linear(dmodel, vocabsize)
         
     def _embed(self, tokens, emb):
         pos = torch.arange(tokens.size(1), device=tokens.device)
         return emb(tokens) * math.sqrt(self.d_model) + self.pos_emb(pos)
 
-    def forward(self, src, tgt, src_pad_mask=None, tgt_pad_mask=None, **batch):
+    def forward(self, src, **batch):
         tgt_mask = nn.Transformer.generate_square_subsequent_mask(
-            tgt.size(1), device=tgt.device)
+            src.size(1), device=src.device)
         h = self.transformer(
-            self._embed(src, self.src_emb), self._embed(tgt, self.tgt_emb),
-            tgt_mask=tgt_mask,
-            src_key_padding_mask=src_pad_mask,
-            tgt_key_padding_mask=tgt_pad_mask,
-            memory_key_padding_mask=src_pad_mask)
+            src = self._embed(src, self.tgt_emb),
+            mask=tgt_mask,
+            src_key_padding_mask=tgt_mask,
+            batch_first=True)
         return {"logits": self.out(h)}
 
     
