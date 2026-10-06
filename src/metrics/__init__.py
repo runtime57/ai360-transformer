@@ -1,2 +1,2 @@
 from src.metrics.example import ExampleMetric
-from src.metrics.mnist_metric import MnistMetricMetric
+from src.metrics.mnist_metric import MnistMetric

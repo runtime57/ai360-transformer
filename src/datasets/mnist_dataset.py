@@ -1,5 +1,6 @@
-import numpy as np
 import torch
+from torchvision.datasets import MNIST
+from torchvision.transforms.functional import to_tensor
 from tqdm.auto import tqdm
 
 from src.datasets.base_dataset import BaseDataset
@@ -7,60 +8,61 @@ from src.utils.io_utils import ROOT_PATH, read_json, write_json
 
 
 class MnistDataset(BaseDataset):
-    """
-    mnist of a nested dataset class to show basic structure.
-
-    Uses random vectors as objects and random integers between
-    0 and n_classes-1 as labels.
-    """
-
     def __init__(
-        self, input_length, name="train", *args, **kwargs
+        self,
+        name="train",          # train / val / test
+        val_size=5000,
+        seed=42,
+        download=True,
+        *args,
+        **kwargs,
     ):
-        """
-        Args:
-            input_length (int): length of the random vector.
-            n_classes (int): number of classes.
-            dataset_length (int): the total number of elements in
-                this random dataset.
-            name (str): partition name
-        """
-        index_path = ROOT_PATH / "data" / "mnist" / name / "index.json"
+        data_path = ROOT_PATH / "data" / "mnist" / name
+        index_path = data_path / "index.json"
 
-        # each nested dataset class must have an index field that
-        # contains list of dicts. Each dict contains information about
-        # the object, including label, path, etc.
         if index_path.exists():
             index = read_json(str(index_path))
         else:
-            index = self._create_index(input_length, name)
+            index = self._create_index(
+                name=name,
+                val_size=val_size,
+                seed=seed,
+                download=download,
+            )
 
         super().__init__(index, *args, **kwargs)
 
-    def _create_index(self, name):
-        """
-        Create index for the dataset. The function processes dataset metadata
-        and utilizes it to get information dict for each element of
-        the dataset.
-        """
+    def _create_index(self, name, val_size, seed, download):
+        mnist_root = ROOT_PATH / "data" / "mnist"
+
+        if name == "test":
+            dataset = MNIST(root=str(mnist_root), train=False, download=download)
+            indices = list(range(len(dataset)))
+        else:
+            dataset = MNIST(root=str(mnist_root), train=True, download=download)
+            generator = torch.Generator().manual_seed(seed)
+            permutation = torch.randperm(len(dataset), generator=generator).tolist()
+
+            if name == "train":
+                indices = permutation[val_size:]
+            elif name == "val":
+                indices = permutation[:val_size]
+            else:
+                raise ValueError(f"Unknown name: {name}")
+
+        data_path = mnist_root / name
+        data_path.mkdir(parents=True, exist_ok=True)
         index = []
-        data_path = ROOT_PATH / "data" / "mnist" / name
-        is_train = (name == "train")
-        mnist_data = torch.load(str(data_path), train=is_train, download=True)
-        data_path.mkdir(exist_ok=True, parents=True)
-        dataset_length = len(mnist_data)
+        width = max(5, len(str(len(indices))))
+        for i, idx in enumerate(tqdm(indices, desc=f"Preparing MNIST {name}")):
+            image, label = dataset[idx]
+            image_tensor = to_tensor(image)
+            image_path = data_path / f"{i:0{width}d}.pt"
+            torch.save(image_tensor, image_path)
+            index.append({
+                "path": str(image_path),
+                "label": int(label),
+            })
 
-        # to get pretty object names
-        number_of_zeros = int(np.log10(dataset_length)) + 1
-
-        for i in tqdm(range(dataset_length)):
-            image, label = mnist_data[i]
-            image_path = data_path / f"{i:0{number_of_zeros}d}.pt"
-            torch.save(mnist_data, image_path)
-            # parse dataset metadata and append it to index
-            index.append({"path": str(image_path), "label": label})
-
-        # write index to disk
         write_json(index, str(data_path / "index.json"))
-
         return index

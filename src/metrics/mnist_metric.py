@@ -15,15 +15,7 @@ class MnistMetric(BaseMetric):
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.metric = metric.to(device)
 
-    def __call__(self, logits: torch.Tensor, labels: torch.Tensor, **kwargs):
-        """
-        Metric calculation logic.
-
-        Args:
-            logits (Tensor): model output predictions.
-            labels (Tensor): ground-truth labels.
-        Returns:
-            metric (float): calculated metric.
-        """
-        classes = logits.argmax(dim=-1)
-        return torch.nn.functional.mse_loss(classes, labels)
+    def __call__(self, logits: torch.Tensor, labels: torch.Tensor, **batch):
+        predictions = logits.argmax(dim=1)
+        accuracy = (predictions == labels).float().mean()
+        return accuracy.item()
