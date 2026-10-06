@@ -4,10 +4,11 @@ torchmetrics
 numpy==1.26.4
 tqdm
 matplotlib
-pandas
+pandas<3
 wandb
 comet_ml
 hydra-core
+safetensors
 
 black
 isort

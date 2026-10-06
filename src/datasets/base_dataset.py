@@ -2,7 +2,8 @@ import logging
 import random
 from typing import List
 
-import torch
+import safetensors
+import safetensors.torch
 from torch.utils.data import Dataset
 
 logger = logging.getLogger(__name__)
@@ -69,7 +70,7 @@ class BaseDataset(Dataset):
         """
         data_dict = self._index[ind]
         data_path = data_dict["path"]
-        data_object = self.load_object(data_path)
+        data_object = self.load(data_path)
         data_label = data_dict["label"]
 
         instance_data = {"data_object": data_object, "labels": data_label}
@@ -83,7 +84,7 @@ class BaseDataset(Dataset):
         """
         return len(self._index)
 
-    def load_object(self, path):
+    def load(self, path):
         """
         Load object from disk.
 
@@ -92,7 +93,7 @@ class BaseDataset(Dataset):
         Returns:
             data_object (Tensor):
         """
-        data_object = torch.load(path)
+        data_object = safetensors.torch.load_file(path)["tensor"]
         return data_object
 
     def preprocess_data(self, instance_data):
@@ -152,7 +153,7 @@ class BaseDataset(Dataset):
         """
         for entry in index:
             assert "path" in entry, (
-                "Each dataset item should include field 'path'" " - path to audio file."
+                "Each dataset item should include field 'path' - path to audio file."
             )
             assert "label" in entry, (
                 "Each dataset item should include field 'label'"
