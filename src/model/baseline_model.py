@@ -22,7 +22,9 @@ class BaselineModel(nn.Module):
             nn.ReLU(),
             nn.Linear(in_features=fc_hidden, out_features=fc_hidden),
             nn.ReLU(),
-            nn.Linear(in_features=fc_hidden, out_features=n_class),
+            nn.Linear(in_features=fc_hidden, out_features=fc_hidden),
+            nn.ReLU(),
+            nn.Linear(in_features=fc_hidden, out_features=n_class)
         )
 
     def forward(self, data_object, **batch):
