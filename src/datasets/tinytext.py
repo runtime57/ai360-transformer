@@ -44,7 +44,11 @@ class TinyTextDataset(BaseDataset):
         data_path.mkdir(exist_ok=True, parents=True)
         url = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
         text = urllib.request.urlopen(url).read().decode()
-        assert len(text)>100
+        n = int(0.99 * len(text))
+        if name == "train":
+            text = text[:n]
+        else:
+            text = text[n:]
         chars = set(text)
         ch_to_int = {c: i for i , c in enumerate(chars)}
         for c in text:
