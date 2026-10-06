@@ -14,9 +14,11 @@ def collate_fn(dataset_items: list[dict]):
             of the tensors.
     """
 
-    result_batch = {}
+    tokens = torch.stack(
+        [torch.as_tensor(elem["token"], dtype=torch.long) for elem in dataset_items]
+    )
 
-    # example of collate_fn
-    result_batch["token"] = torch.tensor([elem["token"] for elem in dataset_items], dtype=torch.long)
-
-    return result_batch
+    return {
+        "token": tokens[:, :-1],
+        "labels": tokens[:, 1:],
+    }

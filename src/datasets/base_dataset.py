@@ -18,7 +18,8 @@ class BaseDataset(Dataset):
     """
 
     def __init__(
-        self, index, limit=None, shuffle_index=False, instance_transforms=None
+        self, index, limit=None, shuffle_index=False, instance_transforms=None,
+        block_size=512
     ):
         """
         Args:
@@ -39,6 +40,11 @@ class BaseDataset(Dataset):
 
         self.instance_transforms = instance_transforms
 
+        self.block_size = block_size
+        self._tokens = torch.tensor(
+            [d["token"] for d in self._index], dtype=torch.long
+        )
+
     def __getitem__(self, ind):
         """
         Get element from the index, preprocess it, and combine it
@@ -54,19 +60,16 @@ class BaseDataset(Dataset):
             instance_data (dict): dict, containing instance
                 (a single dataset element).
         """
-        data_dict = self._index[ind]
-        data_token = data_dict["token"]
-
-        instance_data = {"token": data_token}
+        window = self._tokens[ind : ind + self.block_size + 1]
+        instance_data = {"token": window}
         instance_data = self.preprocess_data(instance_data)
-
         return instance_data
 
     def __len__(self):
         """
         Get length of the dataset (length of the index).
         """
-        return len(self._index)
+        return len(self._tokens) - self.block_size
 
     def load_object(self, path):
         """
