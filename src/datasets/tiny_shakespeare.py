@@ -1,10 +1,11 @@
 import torch
+import requests
 
 from src.utils.io_utils import ROOT_PATH, read_txt, write_txt
 
 
 class ShakespeareDataset:
-    def __init__(self, part, max_seq_len, val_ratio, tokenizer=None, override=False, raw_data_path=None, processed_dir_path=None, transforms=None):
+    def __init__(self, part, max_seq_len, val_ratio, allow_download=True, tokenizer=None, override=False, raw_data_path=None, processed_dir_path=None, transforms=None):
         assert part in ['train', 'val']
 
         self.part = part
@@ -18,6 +19,9 @@ class ShakespeareDataset:
 
         self.processed_file_path = processed_dir_path / f"{part}.txt"
         if override or not self.processed_file_path.exists():
+            if not raw_data_path.exists():
+                assert allow_download, "tiny_shakespeare raw text file was not found"
+                self.download_dataset(raw_data_path)
             self._preprocess(val_ratio, raw_data_path, processed_dir_path)
 
         self.tokenizer = tokenizer
@@ -27,6 +31,22 @@ class ShakespeareDataset:
 
     def __len__(self):
         return self.tokens.shape[0]
+
+    @staticmethod
+    def download_dataset(path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        part_path = path.with_name(path.name + ".part")
+
+        url = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
+
+        with requests.get(url, stream=True, timeout=30) as response:
+            response.raise_for_status()
+            with open(part_path, "wb") as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        file.write(chunk)
+
+        part_path.replace(path)
 
     def _preprocess(self, val_ratio, raw_data_path, processed_dir_path):
         processed_dir_path.mkdir(exist_ok=True, parents=True)
