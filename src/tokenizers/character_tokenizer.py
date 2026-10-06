@@ -1,9 +1,6 @@
 from src.tokenizers import BaseTokenizer
 from typing import Iterable, Sequence
 
-from pathlib import Path
-from src.utils.io_utils import ROOT_PATH
-
 
 class CharacterTokenizer(BaseTokenizer):
     def __init__(self):
