@@ -17,8 +17,6 @@ def collate_fn(dataset_items: list[dict]):
     result_batch = {}
 
     # example of collate_fn
-    result_batch["token"] = torch.vstack(
-        [elem["token"].long() for elem in dataset_items]
-    )
+    result_batch["token"] = torch.tensor([elem["token"] for elem in dataset_items], dtype=torch.long)
 
     return result_batch

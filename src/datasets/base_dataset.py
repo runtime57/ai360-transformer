@@ -35,7 +35,6 @@ class BaseDataset(Dataset):
         """
         self._assert_index_is_valid(index)
 
-        index = self._shuffle_and_limit_index(index, limit, shuffle_index)
         self._index: List[dict] = index
 
         self.instance_transforms = instance_transforms
@@ -145,44 +144,3 @@ class BaseDataset(Dataset):
                 "Each dataset item should include field 'label'"
                 " - object ground-truth label."
             )
-
-    @staticmethod
-    def _sort_index(index):
-        """
-        Sort index via some rules.
-
-        This is not used in the example. The method should be called in
-        the __init__ before shuffling and limiting and after filtering.
-
-        Args:
-            index (list[dict]): list, containing dict for each element of
-                the dataset. The dict has required metadata information,
-                such as label and object path.
-        Returns:
-            index (list[dict]): sorted list, containing dict for each element
-                of the dataset. The dict has required metadata information,
-                such as label and object path.
-        """
-        return sorted(index, key=lambda x: x["KEY_FOR_SORTING"])
-
-    @staticmethod
-    def _shuffle_and_limit_index(index, limit, shuffle_index):
-        """
-        Shuffle elements in index and limit the total number of elements.
-
-        Args:
-            index (list[dict]): list, containing dict for each element of
-                the dataset. The dict has required metadata information,
-                such as label and object path.
-            limit (int | None): if not None, limit the total number of elements
-                in the dataset to 'limit' elements.
-            shuffle_index (bool): if True, shuffle the index. Uses python
-                random package with seed 42.
-        """
-        if shuffle_index:
-            random.seed(42)
-            random.shuffle(index)
-
-        if limit is not None:
-            index = index[:limit]
-        return index
