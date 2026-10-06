@@ -32,19 +32,13 @@ def main(config):
     logger = setup_saving_and_logging(config)
     writer = instantiate(config.writer, logger, project_config)
 
-    tokenizer = None
-    tokenizer_config = config.get("tokenizer")
-    if tokenizer_config is not None:
-        from src.tokenizers import init_tokenizer
-
-        tokenizer = init_tokenizer(tokenizer_config, log=logger)
-
     if config.trainer.device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
     else:
         device = config.trainer.device
 
-    dataloaders, batch_transforms, context = get_dataloaders(config, device, tokenizer)
+    tokenizer_config = config.get("tokenizer")
+    dataloaders, batch_transforms, context, tokenizer = get_dataloaders(config, device, tokenizer_config, logger)
     train_context = context.get("train")
 
     model = instantiate(config.model).to(device)

@@ -1,4 +1,4 @@
-import pandas as pd
+from collections import defaultdict
 
 
 class MetricTracker:
@@ -16,57 +16,36 @@ class MetricTracker:
                 from each batch.
         """
         self.writer = writer
-        self._data = pd.DataFrame(index=keys, columns=["total", "counts", "average"])
-        self.reset()
+        self._data = defaultdict(lambda: {"total": 0.0, "count": 0.0})
+
+        for key in keys:
+            _ = self._data[key]
 
     def reset(self):
-        """
-        Reset all metrics after epoch end.
-        """
-        for col in self._data.columns:
-            self._data[col].values[:] = 0
+        for key in self._data.keys():
+            self._data[key]["total"] = 0.0
+            self._data[key]["count"] = 0.0
 
     def update(self, key, value, n=1):
-        """
-        Update metrics DataFrame with new value.
+        self.update_sum(key, value, n)
 
-        Args:
-            key (str): metric name.
-            value (float): metric value on the batch.
-            n (int): how many times to count this value.
-        """
-        # if self.writer is not None:
-        #     self.writer.add_scalar(key, value)
-        self._data.loc[key, "total"] += value * n
-        self._data.loc[key, "counts"] += n
-        self._data.loc[key, "average"] = self._data.total[key] / self._data.counts[key]
+    def update_sum(self, key, sum_value, n=1):
+        metric_data = self._data[key]
+        metric_data['total'] += sum_value
+        metric_data['count'] += n
+
+    def update_avg(self, key, avg_value, n=1):
+        self.update_sum(key, avg_value * n, n)
+
+    def count(self, key):
+        return self._data.get(key, {'count': 0})['count']
 
     def avg(self, key):
-        """
-        Return average value for a given metric.
-
-        Args:
-            key (str): metric name.
-        Returns:
-            average_value (float): average value for the metric.
-        """
-        return self._data.average[key]
+        metric_data = self._data[key]
+        return metric_data['total'] / metric_data['count'] if metric_data['count'] > 0 else 0.0
 
     def result(self):
-        """
-        Return average value of each metric.
-
-        Returns:
-            average_metrics (dict): dict, containing average metrics
-                for each metric name.
-        """
-        return dict(self._data.average)
+        return {key: self.avg(key) for key in self._data.keys()}
 
     def keys(self):
-        """
-        Return all metric names defined in the MetricTracker.
-
-        Returns:
-            metric_keys (Index): all metric names in the table.
-        """
-        return self._data.total.keys()
+        return self._data.keys()
