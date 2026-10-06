@@ -1,0 +1,27 @@
+defaults:
+  - model: gpt
+  - writer: disabled_wandb
+  - metrics: empty
+  - datasets: tiny_shakespeare
+  - dataloader: main
+  - batch_transforms: empty
+  - instance_transforms: empty
+  - tokenizer: character
+  - optimizer: adam
+  - lr_scheduler: warmup_cosine
+  - loss: cross_entropy
+  - _self_
+
+trainer:
+  log_step: 50
+  n_epochs: 10
+  epoch_len: null
+  device_tensors: ["seq", "target"]
+  resume_from: null
+  device: auto
+  override: False
+  monitor: "min val_loss"
+  save_period: 2
+  early_stop: ${trainer.n_epochs}
+  save_dir: "saved"
+  seed: 42

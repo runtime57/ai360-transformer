@@ -1,0 +1,11 @@
+_target_: src.model.GPT
+decoder:
+  _target_: src.model.TransformerDecoder
+  d_model: 512
+  seq_dropout: 0.1
+  vocab_size: 1
+  num_layers: 6
+  num_heads: 8
+  dropout: 0.1
+  use_trainable_pos_embeds: False
+  max_seq_len: None
