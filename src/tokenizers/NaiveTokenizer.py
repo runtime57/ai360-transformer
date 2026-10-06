@@ -5,9 +5,10 @@ from typing import Any, Iterable, Sequence
 from BaseTokenizer import BaseTokenizer
 
 
+alphabet = " abcdefghijklmnopqrstuvwxyz\n"
+
 class NaiveTokenizer(BaseTokenizer):
     def train(self, texts: Iterable[str]):
-        alphabet = " abcdefghijklmnopqrstuvwxyz\n"
         self.id_to_token[0] = '<BOS>'
         self.id_to_token[1] = '<EOS>'
         self.id_to_token[2] = '<PAD>'
@@ -24,7 +25,6 @@ class NaiveTokenizer(BaseTokenizer):
     def encode(self, text: str) -> list[int]:
         """Convert a string into token ids."""
         res = [0]
-        alphabet = " abcdefghijklmnopqrstuvwxyz"
         for i in range(len(text)):
             if (text[i] in alphabet):
                 res.append(self.token_to_id[text[i]])
