@@ -33,5 +33,5 @@ class CEMetric(BaseMetric):
         Returns:
             metric (float): calculated metric.
         """
-        classes = logits.argmax(dim=-1)
-        return self.metric(classes, labels)
+        V = logits.size(-1)
+        return self.metric(logits.reshape(-1, V), labels.reshape(-1)).item()
