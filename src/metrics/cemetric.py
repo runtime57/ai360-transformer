@@ -19,10 +19,9 @@ class CEMetric(BaseMetric):
             device (str): device for the metric calculation (and tensors).
         """
         super().__init__(*args, **kwargs)
-        metric = nn.CrossEntropyLoss
         if device == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.metric = metric.to(device)
+        self.metric = nn.CrossEntropyLoss().to(device)
 
     def __call__(self, logits: torch.Tensor, labels: torch.Tensor, **kwargs):
         """

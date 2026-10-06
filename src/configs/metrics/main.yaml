@@ -1,11 +1,5 @@
 device: "auto"
-train: # metrics that are calculated during training
+train: []
+inference:
   - _target_: src.metrics.CEMetric
-    device: ${metrics.device}
-    name: "TRAIN_MulticlassAccuracy" # just an example to see difference
-inference: # metrics that are calculated during inference (eval)
-  - _target_: src.metrics.CEMetric
-    metric:
-      _target_: torchmetrics.classification.CrossEntropy
-    device: ${metrics.device}
-    name: "TRAIN_MulticlassAccuracy"
+    device: "auto"
