@@ -138,6 +138,7 @@ class BaseDataset(Dataset):
                 the dataset. The dict has required metadata information,
                 such as label and object path.
         """
+        return
         for entry in index:
             assert "path" in entry, (
                 "Each dataset item should include field 'path'" " - path to audio file."

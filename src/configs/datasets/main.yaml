@@ -1,0 +1,8 @@
+train:
+  _target_: src.datasets.TinyTextDataset
+  name: "train"
+  instance_transforms: ${transforms.instance_transforms.train}
+val:
+  _target_: src.datasets.TinyTextDataset
+  name: "val"
+  instance_transforms: ${transforms.instance_transforms.inference}

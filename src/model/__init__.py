@@ -1,5 +1,5 @@
-from src.model.baseline_model import BaselineModel
+from src.model.nntransformer import nnTransformer
 
 __all__ = [
-    "BaselineModel",
+    "nnTransformer",
 ]
