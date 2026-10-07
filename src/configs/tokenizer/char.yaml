@@ -1,0 +1,4 @@
+instance:
+  _target_: src.tokenizers.CharTokenizer
+vocab_path: data/tinyshakespeare/vocab.json
+train_corpus_path: data/tinyshakespeare/train.txt

@@ -1,0 +1,6 @@
+_target_: src.model.KekTransformer
+max_len: 128
+d_model: 128
+n_heads: 4
+n_layers: 4
+dropout: 0.1

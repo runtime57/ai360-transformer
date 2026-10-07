@@ -6,6 +6,7 @@ from hydra.utils import instantiate
 from omegaconf import OmegaConf
 
 from src.datasets.data_utils import get_dataloaders
+from src.datasets.shakespeare import download_shakespeare
 from src.trainer import Trainer
 from src.utils.init_utils import set_random_seed, setup_saving_and_logging
 
@@ -28,6 +29,8 @@ def main(config):
     logger = setup_saving_and_logging(config)
     writer = instantiate(config.writer, logger, project_config)
 
+    download_shakespeare()
+
     tokenizer = None
     tokenizer_config = config.get("tokenizer")
     if tokenizer_config is not None:
@@ -36,7 +39,12 @@ def main(config):
         tokenizer = init_tokenizer(tokenizer_config, log=logger)
 
     if config.trainer.device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        if torch.cuda.is_available():
+            device = "cuda"
+        elif torch.backends.mps.is_available():
+            device = "mps"
+        else:
+            device = "cpu"
     else:
         device = config.trainer.device
 
@@ -45,7 +53,7 @@ def main(config):
     dataloaders, batch_transforms = get_dataloaders(config, device, tokenizer)
 
     # build model architecture, then print to console
-    model = instantiate(config.model).to(device)
+    model = instantiate(config.model, vocab_size=tokenizer.vocab_size).to(device)
     logger.info(model)
 
     # get function handles of loss and metrics

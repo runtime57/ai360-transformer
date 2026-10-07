@@ -1,0 +1,10 @@
+train:
+  _target_: src.datasets.ShakespeareDataset
+  name: "train"
+  block_size: ${model.max_len}
+  stride: 1 
+val:
+  _target_: src.datasets.ShakespeareDataset
+  name: "val"
+  block_size: ${model.max_len}
+  stride: ${model.max_len}
