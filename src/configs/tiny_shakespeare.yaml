@@ -1,0 +1,45 @@
+defaults:
+  - model: transformer
+  - writer: wandb
+  - metrics: language_model
+  - datasets: tiny_shakespeare
+  - dataloader: language_model
+  - transforms: none
+  - tokenizer: char
+  - _self_
+
+block_size: 128
+
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: 3e-4
+  weight_decay: 0.01
+
+lr_scheduler:
+  _target_: torch.optim.lr_scheduler.StepLR
+  step_size: 1000
+  gamma: 1.0
+
+loss_function:
+  _target_: src.loss.cross_entropy.CrossEntropyLoss
+
+writer:
+  project_name: tiny_shakespeare
+  run_name: transformer_char
+  mode: offline
+
+trainer:
+  log_step: 25
+  n_epochs: 10
+  epoch_len: 200
+  device_tensors: [data_object, labels]
+  device: auto
+  resume_from: null
+  override: false
+  monitor: "min val_loss"
+  save_period: 1
+  early_stop: 5
+  save_dir: saved
+  seed: 1
+  max_grad_norm: 1.0
+  skip_oom: false

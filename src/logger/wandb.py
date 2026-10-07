@@ -40,7 +40,8 @@ class WandBWriter:
         try:
             import wandb
 
-            wandb.login()
+            if mode == "online":
+                wandb.login()
 
             self.run_id = run_id
 
@@ -76,17 +77,21 @@ class WandBWriter:
             step (int): current step.
             mode (str): current mode (partition name).
         """
-        self.mode = mode
+        now = datetime.now()
         previous_step = self.step
+        previous_mode = self.mode
+
         self.step = step
-        if step == 0:
-            self.timer = datetime.now()
-        else:
-            duration = datetime.now() - self.timer
+        self.mode = mode
+
+        duration = (now - self.timer).total_seconds()
+        if mode == previous_mode and step > previous_step and duration > 0:
             self.add_scalar(
-                "steps_per_sec", (self.step - previous_step) / duration.total_seconds()
+                "steps_per_sec",
+                (step - previous_step) / duration,
             )
-            self.timer = datetime.now()
+
+        self.timer = now
 
     def _object_name(self, object_name):
         """

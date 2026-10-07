@@ -24,16 +24,21 @@ def main(config):
     """
     set_random_seed(config.trainer.seed)
 
-    project_config = OmegaConf.to_container(config)
-    logger = setup_saving_and_logging(config)
-    writer = instantiate(config.writer, logger, project_config)
-
     tokenizer = None
     tokenizer_config = config.get("tokenizer")
     if tokenizer_config is not None:
         from src.tokenizers import init_tokenizer
 
-        tokenizer = init_tokenizer(tokenizer_config, log=logger)
+        tokenizer = init_tokenizer(tokenizer_config)
+
+    if "vocab_size" in config.model and config.model.vocab_size is None:
+        if tokenizer is None:
+            raise ValueError("model.vocab_size requires an initialized tokenizer.")
+        config.model.vocab_size = tokenizer.vocab_size
+
+    project_config = OmegaConf.to_container(config)
+    logger = setup_saving_and_logging(config)
+    writer = instantiate(config.writer, logger, project_config)
 
     if config.trainer.device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"

@@ -1,4 +1,4 @@
-from tokenizers.BaseTokenizer import BaseTokenizer
+from src.tokenizers.BaseTokenizer import BaseTokenizer
 
 
 class CharTokenizer(BaseTokenizer):

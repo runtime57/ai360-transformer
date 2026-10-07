@@ -1,0 +1,9 @@
+enabled: true
+instance:
+  _target_: src.tokenizers.CharTokenizer.CharTokenizer
+vocab_path: data/tiny_shakespeare/char_vocab.json
+train_dataset:
+  path: karpathy/tiny_shakespeare
+  revision: refs/pr/2
+  split: train
+text_field: text

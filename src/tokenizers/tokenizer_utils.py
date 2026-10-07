@@ -2,6 +2,7 @@ import json
 import logging
 from collections.abc import Iterator
 from pathlib import Path
+from datasets import load_dataset
 
 from hydra.utils import instantiate, to_absolute_path
 
@@ -66,14 +67,23 @@ def init_tokenizer(config, allow_build: bool = True, log=None):
             "Build it during training first."
         )
 
-    corpus_path = Path(to_absolute_path(config.train_corpus_path))
-    if not corpus_path.is_file():
-        raise FileNotFoundError(
-            f"Tokenizer training corpus was not found at '{corpus_path}'."
-        )
+    if config.get("train_dataset") is not None:
+        dataset_config = dict(config.train_dataset)
+        if dataset_config.get("split") != "train":
+            raise ValueError("Tokenizer vocabulary must be built on the train split.")
+        dataset = load_dataset(**dataset_config)
+        active_logger.info("Building tokenizer vocabulary from the train split")
+        tokenizer.train(dataset[config.get("text_field", "text")])
+    
+    else:
+        corpus_path = Path(to_absolute_path(config.train_corpus_path))
+        if not corpus_path.is_file():
+            raise FileNotFoundError(
+                f"Tokenizer training corpus was not found at '{corpus_path}'."
+            )
+        active_logger.info("Building tokenizer vocabulary from %s", corpus_path)
+        tokenizer.train(_iter_texts(corpus_path, config.get("text_field")))
 
-    active_logger.info("Building tokenizer vocabulary from %s", corpus_path)
-    tokenizer.train(_iter_texts(corpus_path, config.get("text_field")))
     tokenizer.save_vocab(vocab_path)
     active_logger.info("Saved tokenizer vocabulary to %s", vocab_path)
     return tokenizer
