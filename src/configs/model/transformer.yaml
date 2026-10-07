@@ -1,0 +1,7 @@
+_target_: src.model.basic_transformer.TransformerModel
+vocab_size: null # injected from the tokenizer in train.py
+block_size: ${block_size}
+d_model: 128
+n_heads: 4
+n_layers: 4
+dropout: 0.1

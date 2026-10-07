@@ -1,0 +1,5 @@
+enabled: true
+instance:
+  _target_: src.tokenizers.SymbolTokenizer
+vocab_path: saved/tokenizer/symbol_vocab.json
+train_corpus_path: data/text/train.txt
