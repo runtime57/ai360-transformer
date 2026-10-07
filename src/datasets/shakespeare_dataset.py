@@ -40,12 +40,14 @@ class TextDataset(BaseDataset):
         number_of_zeros = int(np.log10(dataset_length)) + 1
 
         tokens_window = [0] * self.block_size
+        labels_window = [0] * self.block_size
         for i in tqdm(range(dataset_length)):
-            current_tokens, label = tokens_window, seq[i]
-            obj = torch.tensor(current_tokens)
+            labels_window.pop(0)
+            labels_window.append(seq[i])
+            obj = torch.tensor(tokens_window)
             obj_path = data_path / f"{i:0{number_of_zeros}d}.pt"
             torch.save(obj, obj_path)
-            index.append({"path": str(obj_path), "label": int(label)})
+            index.append({"path": str(obj_path), "label": labels_window})
             tokens_window.pop(0)
             tokens_window.append(seq[i])
 
