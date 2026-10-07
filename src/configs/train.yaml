@@ -6,7 +6,7 @@ defaults:
   - dataloader: main
   - batch_transforms: empty
   - instance_transforms: empty
-  - tokenizer: character
+  - tokenizer: bpe
   - optimizer: adam
   - lr_scheduler: warmup_cosine
   - loss: cross_entropy

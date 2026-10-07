@@ -54,8 +54,9 @@ def init_tokenizer(config, allow_build: bool = True, log=None):
     active_logger = log or logger
     tokenizer = instantiate(config.instance)
     vocab_path = Path(to_absolute_path(config.vocab_path))
+    override = config.get("override", False)
 
-    if vocab_path.is_file():
+    if not override and vocab_path.is_file():
         tokenizer.load_vocab(vocab_path)
         active_logger.info("Loaded tokenizer vocabulary from %s", vocab_path)
         return tokenizer
