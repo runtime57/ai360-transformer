@@ -27,9 +27,31 @@ class TransformerDecoder(nn.Module):
             num_layers=num_layers
         )
 
+        self.apply(self._init_weights)
+
+    def _init_weights(self, module: nn.Module):
+        if isinstance(module, nn.Embedding):
+            nn.init.normal_(module.weight, std=0.02)
+            if module.padding_idx is not None:
+                with torch.no_grad():
+                    module.weight.data[module.padding_idx].zero()
+        elif isinstance(module, nn.Linear):
+            nn.init.normal_(module.weight, std=0.02)
+            if module.bias is not None:
+                nn.init.constant_(module.bias, 0)
+        elif isinstance(module, nn.LayerNorm):
+            nn.init.constant_(module.bias, 0)
+            nn.init.constant_(module.weight, 1.0)
+        elif isinstance(module, nn.MultiheadAttention):
+            nn.init.normal_(module.in_proj_weight, mean=0.0, std=0.02)
+            if module.in_proj_bias is not None:
+                nn.init.zeros_(module.in_proj_bias)
+
+
     def _set_context(self, vocab_size, **context):
         self.vocab_size = vocab_size
-        self.token_embedding = nn.Embedding(vocab_size, self.d_model)
+        self.token_embedding = nn.Embedding(vocab_size, self.d_model, device=self.token_embedding.device)
+        self._init_weights(self.token_embedding)
 
     def forward(self, seq, **batch):
         # seq: [B, L] (already tokenized)

@@ -22,7 +22,7 @@ class CharacterTokenizer(BaseTokenizer):
         token_ids = [self.token_to_id.get(char, unk_id) for char in text]
 
         if add_special_tokens:
-            token_ids = [self.token_to_id["<bos>"], *token_ids, self.token_to_id["<bos>"]]
+            token_ids = [self.token_to_id["<bos>"], *token_ids, self.token_to_id["<eos>"]]
 
         return token_ids
 
