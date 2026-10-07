@@ -14,7 +14,7 @@ defaults:
 
 trainer:
   log_step: 50
-  n_epochs: 10
+  epochs: 10
   epoch_len: null
   device_tensors: ["seq", "target"]
   resume_from: null
@@ -22,6 +22,6 @@ trainer:
   override: False
   monitor: "min val_loss"
   save_period: 2
-  early_stop: ${trainer.n_epochs}
+  early_stop: ${trainer.epochs}
   save_dir: "saved"
   seed: 42

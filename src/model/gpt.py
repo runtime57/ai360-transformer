@@ -90,11 +90,13 @@ class TransformerDecoder(nn.Module):
 
 
 class GPT(nn.Module):
-    def __init__(self, decoder, tokenizer=None, beam_width=1, max_output_tokens=1024):
+    def __init__(self, decoder, tokenizer=None, beam_width=1, context_len=256, max_new_tokens=1024):
         super().__init__()
 
+        self.context_len = context_len
         self.decoder = decoder
         self.tokenizer = tokenizer
+        self.max_new_tokens = max_new_tokens
 
     def _set_tokenizer(self, tokenizer):
         self.tokenizer = tokenizer
@@ -106,10 +108,17 @@ class GPT(nn.Module):
 
     def forward(self, seq, **batch):
         # seq: [B, L] (already tokenized)
-
         return {'logits': self.decoder(seq, **batch)}
 
-    # def predict(self, seq, **batch):
-    #     # seq: [1, L] (already tokenized) ?
+    def predict(self, seq, **batch):
+        # seq: [1, L] (already tokenized)
 
-    #     logits = self.decoder(seq, **batch)
+        added_tokens = 0
+        while seq[-1] != self.tokenizer.token_to_id['<eos>'] and added_tokens < self.max_new_tokens:
+            x = seq[:, -self.context_len:]
+            logits = self.decoder(x, **batch)[1, -1, :]
+            best = logits.argmax()
+            seq = torch.cat([seq, best])
+            added_tokens += 1
+
+        return {"seq": seq}

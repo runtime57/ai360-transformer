@@ -89,7 +89,7 @@ class BaseTrainer:
         # define epochs
         self._last_epoch = 0  # required for saving on interruption
         self.start_epoch = 1
-        self.epochs = self.cfg_trainer.n_epochs
+        self.epochs = self.cfg_trainer.epochs
 
         # configuration to monitor model performance and save best
 

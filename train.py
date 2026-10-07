@@ -59,7 +59,7 @@ def main(config):
 
     epoch_len = config.trainer.get("epoch_len")
     real_epoch_len = epoch_len if epoch_len is not None else len(dataloaders['train'])
-    total_steps = config.trainer.n_epochs * real_epoch_len
+    total_steps = config.trainer.epochs * real_epoch_len
 
     if config.get("lr_scheduler") is not None:
         config.lr_scheduler['steps'] = total_steps
