@@ -1,17 +1,24 @@
 import numpy as np
 import torch
-from tqdm.auto import tqdm
 from datasets import load_dataset
+from hydra.utils import to_absolute_path
+from tqdm.auto import tqdm
 
 from src.datasets.base_dataset import BaseDataset
+from src.tokenizers import SymbolTokenizer
 from src.utils.io_utils import ROOT_PATH, read_json, write_json
 
 
 class TextDataset(BaseDataset):
 
     def __init__(
-        self, tokenizer, block_size, name="train", *args, **kwargs
+        self, tokenizer=None, block_size=128, vocab_path=None, name="train", *args, **kwargs
     ):
+        if tokenizer is None:
+            # datasets are instantiated before the shared tokenizer is
+            # attached, so load the vocabulary ourselves
+            tokenizer = SymbolTokenizer()
+            tokenizer.load_vocab(to_absolute_path(vocab_path))
         self.set_tokenizer(tokenizer=tokenizer)
         self.block_size = block_size
         index_path = ROOT_PATH / "small shakespeare" / name / "index.json"
