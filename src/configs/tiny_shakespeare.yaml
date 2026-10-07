@@ -5,7 +5,7 @@ defaults:
   - datasets: tiny_shakespeare
   - dataloader: language_model
   - transforms: none
-  - tokenizer: char
+  - tokenizer: bpe
   - _self_
 
 block_size: 128
@@ -25,13 +25,13 @@ loss_function:
 
 writer:
   project_name: tiny_shakespeare
-  run_name: transformer_char
-  mode: offline
+  run_name: transformer_bpe
+  mode: online
 
 trainer:
-  log_step: 25
-  n_epochs: 10
-  epoch_len: 200
+  log_step: 10
+  n_epochs: 100
+  epoch_len: 100
   device_tensors: [data_object, labels]
   device: auto
   resume_from: null

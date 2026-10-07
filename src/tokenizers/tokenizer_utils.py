@@ -31,9 +31,7 @@ def _iter_texts(corpus_path: Path, text_field: str | None) -> Iterator[str]:
 
     with corpus_path.open("r", encoding="utf-8") as file:
         for line in file:
-            text = line.rstrip("\n\r")
-            if text:
-                yield text
+            yield line
 
 
 def init_tokenizer(config, allow_build: bool = True, log=None):

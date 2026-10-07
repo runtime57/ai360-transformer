@@ -32,6 +32,11 @@ def main(config):
         # Inference may load a vocabulary but must never fit one on evaluation data.
         tokenizer = init_tokenizer(tokenizer_config, allow_build=False)
 
+    if "vocab_size" in config.model and config.model.vocab_size is None:
+        if tokenizer is None:
+            raise ValueError("model.vocab_size requires an initialized tokenizer.")
+        config.model.vocab_size = tokenizer.vocab_size
+
     if config.inferencer.device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
     else:

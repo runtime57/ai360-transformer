@@ -1,0 +1,11 @@
+enabled: true
+instance:
+  _target_: src.tokenizers.bpe.BpeTokenizer
+  vocab_size: 1024
+  min_frequency: 2
+vocab_path: data/tiny_shakespeare/bpe_vocab.json
+train_dataset:
+  path: karpathy/tiny_shakespeare
+  revision: refs/pr/2
+  split: train
+text_field: text

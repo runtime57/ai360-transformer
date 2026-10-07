@@ -9,6 +9,7 @@ wandb
 comet_ml
 hydra-core
 datasets>=4.0,<5.0
+tokenizers>=0.22,<0.24
 
 black
 isort
