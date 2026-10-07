@@ -1,0 +1,8 @@
+instance:
+  _target_: src.tokenizers.LetterTokenizer
+  special_tokens:
+    - '<BOS>'
+    - '<EOS>'
+
+train_corpus_path: data/tinyshakespeare/train.txt
+vocab_path: data/tinyshakespeare/vocab.json

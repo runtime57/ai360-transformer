@@ -1,0 +1,8 @@
+_target_: src.model.TextGenTransformer
+vocab_size: ${tokenizer.vocab_size}
+max_len: ${datasets.train.block_size}
+d: 128
+num_heads: 4 # must divide d
+num_layers: 4
+dropout: 0.1
+dim_ffn: null # null -> 4 * d

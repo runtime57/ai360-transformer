@@ -1,0 +1,12 @@
+train:
+  _target_: src.datasets.TinyShakespeareDataset
+  name: 'train'
+  instance_transforms: null
+  block_size: 128
+  stride: 1
+test:
+  _target_: src.datasets.TinyShakespeareDataset
+  name: 'test'
+  instance_transforms: null
+  block_size: 128
+  stride: 128

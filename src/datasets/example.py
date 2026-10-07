@@ -2,11 +2,11 @@ import numpy as np
 import torch
 from tqdm.auto import tqdm
 
-from src.datasets.base_dataset import BaseDataset
+from src.datasets.base_index_dataset import BaseIndexDataset
 from src.utils.io_utils import ROOT_PATH, read_json, write_json
 
 
-class ExampleDataset(BaseDataset):
+class ExampleDataset(BaseIndexDataset):
     """
     Example of a nested dataset class to show basic structure.
 

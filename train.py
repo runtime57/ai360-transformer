@@ -3,7 +3,7 @@ import warnings
 import hydra
 import torch
 from hydra.utils import instantiate
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, open_dict
 
 from src.datasets.data_utils import get_dataloaders
 from src.trainer import Trainer
@@ -43,6 +43,13 @@ def main(config):
     # setup data_loader instances
     # batch_transforms should be put on device
     dataloaders, batch_transforms = get_dataloaders(config, device, tokenizer)
+
+    # runtime values referenced from configs as ${trainer.epoch_len} / ${tokenizer.vocab_size}
+    with open_dict(config):
+        if config.trainer.get("epoch_len") is None:
+            config.trainer.epoch_len = len(dataloaders["train"])
+        if tokenizer is not None:
+            config.tokenizer.vocab_size = tokenizer.vocab_size
 
     # build model architecture, then print to console
     model = instantiate(config.model).to(device)
