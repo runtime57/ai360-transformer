@@ -50,7 +50,7 @@ class TransformerDecoder(nn.Module):
 
     def _set_context(self, vocab_size, **context):
         self.vocab_size = vocab_size
-        self.token_embedding = nn.Embedding(vocab_size, self.d_model, device=self.token_embedding.device)
+        self.token_embedding = nn.Embedding(vocab_size, self.d_model).to(self.token_embedding.weight.device)
         self._init_weights(self.token_embedding)
 
     def forward(self, seq, **batch):
