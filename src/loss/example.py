@@ -1,5 +1,7 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
+
 
 
 class ExampleLoss(nn.Module):
@@ -9,7 +11,6 @@ class ExampleLoss(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.loss = nn.CrossEntropyLoss()
 
     def forward(self, logits: torch.Tensor, labels: torch.Tensor, **batch):
         """
@@ -29,4 +30,6 @@ class ExampleLoss(nn.Module):
         Returns:
             losses (dict): dict containing calculated loss functions.
         """
-        return {"loss": self.loss(logits, labels)}
+        B, T, V = logits.shape
+        loss = F.cross_entropy(logits.reshape(B * T, V), labels.reshape(B * T))
+        return {"loss": loss}

@@ -1,29 +1,44 @@
 from torch import nn
 from torch.nn import Sequential
-
+import torch
 
 class BaselineModel(nn.Module):
     """
     Simple MLP
     """
 
-    def __init__(self, n_feats, n_class, fc_hidden=512):
+    def __init__(self, vocabulary_size, num_layers = 10, d_model = 512, nhead = 8, dropout = 0.1):
         """
         Args:
-            n_feats (int): number of input features.
-            n_class (int): number of classes.
-            fc_hidden (int): number of hidden features.
+            vocabulary_size,
+            d_model,
+            nhead,
         """
         super().__init__()
 
-        self.net = Sequential(
-            # people say it can approximate any function...
-            nn.Linear(in_features=n_feats, out_features=fc_hidden),
-            nn.ReLU(),
-            nn.Linear(in_features=fc_hidden, out_features=fc_hidden),
-            nn.ReLU(),
-            nn.Linear(in_features=fc_hidden, out_features=n_class),
+        self.d_model = d_model
+        self.nhead = nhead
+        self.num_layers = num_layers
+        self.vocabulary_size = vocabulary_size
+        encoder_layer=nn.TransformerEncoderLayer(
+            d_model=self.d_model,
+            nhead=self.nhead,
+            dim_feedforward=4 * self.d_model,
+            dropout=dropout,
+            batch_first=True
         )
+
+
+        self.maskedencoder = nn.TransformerEncoder(
+            encoder_layer,
+            num_layers=self.num_layers
+        )
+
+        self.lastlinear = nn.Sequential(
+            nn.Linear(self.d_model, self.vocabulary_size),
+        ) # logits are output
+
+        self.embedings = nn.Embedding(self.vocabulary_size, d_model)
 
     def forward(self, data_object, **batch):
         """
@@ -34,7 +49,20 @@ class BaselineModel(nn.Module):
         Returns:
             output (dict): output dict containing logits.
         """
-        return {"logits": self.net(data_object)}
+
+        context_size = data_object.shape[1]
+        data_object = self.embedings(data_object)
+
+        mask = nn.Transformer.generate_square_subsequent_mask(context_size)
+
+        prelogits = self.maskedencoder(
+            src=data_object,
+            mask=mask
+        )
+        logits = self.lastlinear(prelogits)
+
+        return {"logits" : logits}
+
 
     def __str__(self):
         """

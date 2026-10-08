@@ -75,9 +75,11 @@ def get_dataloaders(config, device, tokenizer=None):
             should be applied on the whole batch. Depend on the
             tensor name.
     """
+    batch_transforms = None
+
     # transforms or augmentations init
-    batch_transforms = instantiate(config.transforms.batch_transforms)
-    move_batch_transforms_to_device(batch_transforms, device)
+    #batch_transforms = instantiate(config.transforms.batch_transforms)
+    #move_batch_transforms_to_device(batch_transforms, device)
 
     # dataset partitions init
     datasets = instantiate(config.datasets)  # instance transforms are defined inside

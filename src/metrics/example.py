@@ -1,10 +1,11 @@
 import torch
-
+from torch import nn
 from src.metrics.base_metric import BaseMetric
+import torch.nn.functional as F
 
 
 class ExampleMetric(BaseMetric):
-    def __init__(self, metric, device, *args, **kwargs):
+    def __init__(self, device, *args, **kwargs):
         """
         Example of a nested metric class. Applies metric function
         object (for example, from TorchMetrics) on tensors.
@@ -19,7 +20,6 @@ class ExampleMetric(BaseMetric):
         super().__init__(*args, **kwargs)
         if device == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.metric = metric.to(device)
 
     def __call__(self, logits: torch.Tensor, labels: torch.Tensor, **kwargs):
         """
@@ -31,5 +31,6 @@ class ExampleMetric(BaseMetric):
         Returns:
             metric (float): calculated metric.
         """
-        classes = logits.argmax(dim=-1)
-        return self.metric(classes, labels)
+        B, T, V = logits.shape
+        loss = F.cross_entropy(logits.reshape(B * T, V), labels.reshape(B * T))
+        return loss

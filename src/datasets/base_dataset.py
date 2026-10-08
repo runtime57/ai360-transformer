@@ -73,7 +73,8 @@ class BaseDataset(Dataset):
         data_label = data_dict["label"]
 
         instance_data = {"data_object": data_object, "labels": data_label}
-        instance_data = self.preprocess_data(instance_data)
+        #instance_data = self.preprocess_data(instance_data)
+
 
         return instance_data
 
