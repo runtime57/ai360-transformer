@@ -97,7 +97,7 @@ class TransformerDecoder(nn.Module):
 
 
 class GPT(nn.Module):
-    def __init__(self, decoder, tokenizer=None, beam_width=1, context_len=256, max_new_tokens=1024):
+    def __init__(self, decoder, tokenizer=None, beam_width=1, beam_temperature=1.0, use_prob_sampling=False, context_len=512, max_new_tokens=1024):
         super().__init__()
 
         self.context_len = context_len
@@ -105,6 +105,8 @@ class GPT(nn.Module):
         self.tokenizer = tokenizer
         self.max_new_tokens = max_new_tokens
         self.beam_width = beam_width
+        self.beam_temperature = beam_temperature
+        self.use_prob_sampling = use_prob_sampling
 
     def _set_tokenizer(self, tokenizer):
         self.tokenizer = tokenizer
@@ -119,15 +121,56 @@ class GPT(nn.Module):
 
         return {'logits': self.decoder(seq, **batch)}
 
+    @torch.no_grad()
     def predict(self, seq, **batch):
         # seq: [1, L] (already tokenized)
 
-        added_tokens = 0
-        while seq[-1] != self.tokenizer.token_to_id['<eos>'] and added_tokens < self.max_new_tokens:
-            x = seq[:, -self.context_len:]
-            logits = self.decoder(x, **batch)[1, -1, :]
-            best = logits.argmax()
-            seq = torch.cat([seq, best])
-            added_tokens += 1
+        eos_id = self.tokenizer.token_to_id["<eos>"]
+        prompt_len = seq.shape[-1]
 
-        return {"seq": seq}
+        beams = seq
+        scores = torch.zeros(1, device=seq.device)
+        finished = (beams[:, -1] == eos_id)
+
+        for _ in range(self.max_new_tokens):
+            if finished.all():
+                break
+
+            x = beams[:, -self.context_len:]
+            logits = self.decoder(x, **batch)[:, -1, :]
+            log_probs = torch.log_softmax(logits.float() / self.beam_temperature, dim=-1)
+
+            log_probs = log_probs.masked_fill(finished[:, None], float("-inf"))
+            log_probs[:, eos_id] = torch.where(finished, 0.0, log_probs[:, eos_id])
+
+            candidate_scores = scores[:, None] + log_probs
+            vocab_size = log_probs.shape[-1]
+
+            if self.use_prob_sampling:
+                flat_scores = candidate_scores.flatten()
+                probabilities = torch.softmax(flat_scores, dim=0)
+
+                k = min(self.beam_width, torch.count_nonzero(probabilities).item())
+                indices = torch.multinomial(probabilities, num_samples=k)
+                scores = flat_scores[indices]
+            else:
+                k = min(self.beam_width, candidate_scores.numel())
+                scores, indices = candidate_scores.flatten().topk(k)
+
+            parent_beam = indices // vocab_size
+            new_tokens = indices % vocab_size
+
+            beams = torch.cat([beams[parent_beam], new_tokens[:, None]], dim=1)
+            finished = finished[parent_beam] | (new_tokens == eos_id)
+
+        best_index = scores.argmax().item()
+        best = beams[best_index:best_index + 1]
+        generated = best[0, prompt_len:]
+        eos_positions = torch.where(generated == eos_id)[0]
+
+        if eos_positions.numel() > 0:
+            first_eos_idx = eos_positions[0].item()
+            prompt_and_generated = prompt_len + first_eos_idx + 1
+            best = best[:, :prompt_and_generated]
+
+        return {"seq": best}
