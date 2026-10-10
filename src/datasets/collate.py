@@ -1,4 +1,7 @@
 import torch
+from torch.nn.utils.rnn import pad_sequence
+
+MAX_LEN = 512
 
 
 def collate_fn(dataset_items: list[dict]):
@@ -13,13 +16,9 @@ def collate_fn(dataset_items: list[dict]):
         result_batch (dict[Tensor]): dict, containing batch-version
             of the tensors.
     """
+    seqs = [elem["data_object"][: MAX_LEN + 1] for elem in dataset_items]
 
-    result_batch = {}
-
-    # example of collate_fn
-    result_batch["data_object"] = torch.vstack(
-        [elem["data_object"] for elem in dataset_items]
-    )
-    result_batch["labels"] = torch.tensor([elem["labels"] for elem in dataset_items])
-
-    return result_batch
+    return {
+        "token": pad_sequence([s[:-1] for s in seqs], batch_first=True),
+        "labels": pad_sequence([s[1:] for s in seqs], batch_first=True),
+    }
