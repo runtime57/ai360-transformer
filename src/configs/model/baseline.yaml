@@ -1,6 +1,6 @@
 _target_: src.model.BaselineModel
 vocabulary_size: 32
-d_model: 10
-nhead: 10
+d_model: 64
+nhead: 4
 num_layers: 4
-dropout: 0.3
+dropout: 0.1
