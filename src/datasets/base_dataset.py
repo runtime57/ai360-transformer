@@ -67,16 +67,16 @@ class BaseDataset(Dataset):
             instance_data (dict): dict, containing instance
                 (a single dataset element).
         """
-        data_dict = self._index[ind]
-        data_path = data_dict["path"]
-        data_object = self.load_object(data_path)
-        data_label = data_dict["label"]
+        # data_dict = self._index[ind]
+        # data_path = data_dict["path"]
+        # data_object = self.load_object(data_path)
+        # data_label = data_dict["label"]
 
-        instance_data = {"data_object": data_object, "labels": data_label}
+        #instance_data = {"data_object": data_object, "labels": data_label}
         #instance_data = self.preprocess_data(instance_data)
 
-
-        return instance_data
+        return self._index[ind]
+        #return instance_data
 
     def __len__(self):
         """
@@ -152,9 +152,9 @@ class BaseDataset(Dataset):
                 such as label and object path.
         """
         for entry in index:
-            assert "path" in entry, (
-                "Each dataset item should include field 'path'" " - path to audio file."
-            )
+            # assert "path" in entry, (
+            #     "Each dataset item should include field 'path'" " - path to audio file."
+            # )
             assert "label" in entry, (
                 "Each dataset item should include field 'label'"
                 " - object ground-truth label."

@@ -53,7 +53,6 @@ class TextDataset(BaseDataset):
                 such as label and object path.
         """
         index = []
-        ROOT_PATH = Path(__file__).resolve().parent
         data_dir = ROOT_PATH / "data"
         data_dir.mkdir(exist_ok=True)
         train_path = data_dir / "train_input.txt"
@@ -95,17 +94,16 @@ class TextDataset(BaseDataset):
 
         window = [0 for _ in range(self.block_size)]
         for i in tqdm(range(dataset_length)):
-            obj = torch.tensor(window, dtype=torch.int32)
+            obj = window.copy()
             window.pop(0)
             window.append(seq[i])
-            label = window
+            label = window.copy()
 
-            obj_path = data_dir / name / f"{i:0{number_of_zeros}d}.pt"
-            torch.save(obj, obj_path)
-            index.append({"path": str(obj_path), "label": label})
+            #obj_path = data_dir / name / f"{i:0{number_of_zeros}d}.pt"
+            #torch.save(obj, obj_path)
+            index.append({"data_object": obj, "label": label})
 
 
         # write index to disk
         write_json(index, str(data_dir / name / "index.json"))
-
         return index
