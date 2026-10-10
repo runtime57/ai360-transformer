@@ -1,9 +1,11 @@
 import torch.nn as nn
 import torch
 
+from .transformer_utils.transformer_block import TransformerBlock
+
 
 class TransformerDecoder(nn.Module):
-    def __init__(self, d_model, seq_dropout, vocab_size, num_layers, num_heads, dropout, use_trainable_pos_embeds=False, max_seq_len=None):
+    def __init__(self, d_model, vocab_size, num_layers, num_heads, seq_dropout=0.1, ffn_dropout=0.1, attn_dropout=0.1, use_trainable_pos_embeds=False, max_seq_len=None):
         super().__init__()
 
         self.vocab_size = vocab_size
@@ -17,15 +19,17 @@ class TransformerDecoder(nn.Module):
 
         self.seq_dropout = nn.Dropout(seq_dropout)
 
-        self.transformer_decoder = nn.TransformerEncoder(
-            encoder_layer=nn.TransformerEncoderLayer(
+        self.transformer_blocks = torch.nn.ModuleList([
+            TransformerBlock(
                 d_model=d_model,
-                nhead=num_heads,
-                batch_first=True,
-                dropout=dropout
-            ),
-            num_layers=num_layers
-        )
+                mlp_hidden_dim=4 * d_model,
+                num_heads=num_heads,
+                ffn_dropout=ffn_dropout,
+                attn_dropout=attn_dropout
+            ) for _ in range(num_layers)
+        ])
+
+        self.final_norm = nn.LayerNorm(d_model)
 
         self.apply(self._init_weights)
 
@@ -76,14 +80,10 @@ class TransformerDecoder(nn.Module):
         seq = seq + pos_embed
         seq = self.seq_dropout(seq)
 
-        causal_mask = torch.ones(L, L, dtype=torch.bool, device=device).triu(diagonal=1)
+        for block in self.transformer_blocks:
+            seq = block(seq)
 
-        embeds = self.transformer_decoder(
-            seq,
-            mask=causal_mask,
-            is_causal=True
-        )
-
+        embeds = self.final_norm(seq)
         logits = embeds @ self.token_embedding.weight.T
 
         return logits
