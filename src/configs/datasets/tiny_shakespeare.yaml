@@ -1,0 +1,12 @@
+train:
+  _target_: src.datasets.ShakespeareDataset
+  part: "train"
+  max_seq_len: 256
+  val_ratio: 0.1
+  transforms: ${instance_transforms.train}
+val:
+  _target_: src.datasets.ShakespeareDataset
+  part: "val"
+  max_seq_len: 256
+  val_ratio: 0.1
+  transforms: ${instance_transforms.inference}

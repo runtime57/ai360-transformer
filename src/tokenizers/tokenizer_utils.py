@@ -30,9 +30,9 @@ def _iter_texts(corpus_path: Path, text_field: str | None) -> Iterator[str]:
 
     with corpus_path.open("r", encoding="utf-8") as file:
         for line in file:
-            text = line.rstrip("\n\r")
-            if text:
-                yield text
+            # line = line.rstrip("\n\r")
+            if line:
+                yield line
 
 
 def init_tokenizer(config, allow_build: bool = True, log=None):
@@ -54,8 +54,9 @@ def init_tokenizer(config, allow_build: bool = True, log=None):
     active_logger = log or logger
     tokenizer = instantiate(config.instance)
     vocab_path = Path(to_absolute_path(config.vocab_path))
+    override = config.get("override", False)
 
-    if vocab_path.is_file():
+    if not override and vocab_path.is_file():
         tokenizer.load_vocab(vocab_path)
         active_logger.info("Loaded tokenizer vocabulary from %s", vocab_path)
         return tokenizer

@@ -1,0 +1,7 @@
+instance:
+  _target_: src.tokenizers.BpeTokenizer
+  vocab_size: 1024
+  min_frequency: 2
+vocab_path: "data/tokenizer/bpe/tiny_shakespeare.json"
+train_corpus_path: "data/tiny_shakespeare/processed/train.txt"
+override: true

@@ -1,0 +1,9 @@
+_target_: src.logger.WandBWriter
+project_name: "pytorch_template"
+entity: null
+run_name: "testing"
+mode: "online"
+loss_names: ["loss"]
+log_checkpoints: False
+id_length: 8
+disable: True

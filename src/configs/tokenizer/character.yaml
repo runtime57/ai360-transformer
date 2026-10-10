@@ -1,0 +1,5 @@
+instance:
+  _target_: src.tokenizers.CharacterTokenizer
+vocab_path: "data/tokenizer/character/tiny_shakespeare.json"
+train_corpus_path: "data/tiny_shakespeare/processed/train.txt"
+override: true

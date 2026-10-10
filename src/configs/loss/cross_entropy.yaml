@@ -1,0 +1,4 @@
+_target_: src.loss.CrossEntropyLoss
+temperature: 1.0
+label_smoothing: 0.0
+ignore_class_id: 0

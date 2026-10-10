@@ -16,6 +16,7 @@ class WandBWriter:
         logger,
         project_config,
         project_name,
+        disable=False,
         entity=None,
         run_id=None,
         run_name=None,
@@ -37,31 +38,32 @@ class WandBWriter:
             mode (str): if online, log data to the remote server. If
                 offline, log locally.
         """
-        try:
-            import wandb
+        self.disable = disable
 
-            wandb.login()
+        if not self.disable:
+            try:
+                import wandb
 
-            self.run_id = run_id
+                wandb.login()
 
-            wandb.init(
-                project=project_name,
-                entity=entity,
-                config=project_config,
-                name=run_name,
-                resume="allow",  # resume the run if run_id existed
-                id=self.run_id,
-                mode=mode,
-                save_code=kwargs.get("save_code", False),
-            )
-            self.wandb = wandb
+                self.run_id = run_id
 
-        except ImportError:
-            logger.warning("For use wandb install it via \n\t pip install wandb")
+                wandb.init(
+                    project=project_name,
+                    entity=entity,
+                    config=project_config,
+                    name=run_name,
+                    resume="allow",  # resume the run if run_id existed
+                    id=self.run_id,
+                    mode=mode,
+                    save_code=kwargs.get("save_code", False),
+                )
+                self.wandb = wandb
+
+            except ImportError:
+                logger.warning("For use wandb install it via \n\t pip install wandb")
 
         self.step = 0
-        # the mode is usually equal to the current partition name
-        # used to separate Partition1 and Partition2 metrics
         self.mode = ""
         self.timer = datetime.now()
 
@@ -76,6 +78,10 @@ class WandBWriter:
             step (int): current step.
             mode (str): current mode (partition name).
         """
+
+        if self.disable:
+            return
+
         self.mode = mode
         previous_step = self.step
         self.step = step
@@ -112,6 +118,9 @@ class WandBWriter:
             checkpoint_path (str): path to the checkpoint file.
             save_dir (str): path to the dir, where checkpoint is saved.
         """
+        if self.disable:
+            return
+
         self.wandb.save(checkpoint_path, base_path=save_dir)
 
     def add_scalar(self, scalar_name, scalar):
@@ -122,6 +131,9 @@ class WandBWriter:
             scalar_name (str): name of the scalar to use in the tracker.
             scalar (float): value of the scalar.
         """
+        if self.disable:
+            return
+
         self.wandb.log(
             {
                 self._object_name(scalar_name): scalar,
@@ -136,6 +148,9 @@ class WandBWriter:
         Args:
             scalars (dict): dict, containing scalar name and value.
         """
+        if self.disable:
+            return
+
         self.wandb.log(
             {
                 self._object_name(scalar_name): scalar
@@ -153,6 +168,9 @@ class WandBWriter:
             image (Path | ndarray | Image): image in the WandB-friendly
                 format.
         """
+        if self.disable:
+            return
+
         self.wandb.log(
             {self._object_name(image_name): self.wandb.Image(image)}, step=self.step
         )
@@ -166,6 +184,9 @@ class WandBWriter:
             audio (Path | ndarray): audio in the WandB-friendly format.
             sample_rate (int): audio sample rate.
         """
+        if self.disable:
+            return
+
         audio = audio.detach().cpu().numpy().T
         self.wandb.log(
             {
@@ -184,6 +205,9 @@ class WandBWriter:
             text_name (str): name of the text to use in the tracker.
             text (str): text content.
         """
+        if self.disable:
+            return
+
         self.wandb.log(
             {self._object_name(text_name): self.wandb.Html(text)}, step=self.step
         )
@@ -198,6 +222,9 @@ class WandBWriter:
                 histogram of.
             bins (int | str): the definition of bins for the histogram.
         """
+        if self.disable:
+            return
+
         values_for_hist = values_for_hist.detach().cpu().numpy()
         np_hist = np.histogram(values_for_hist, bins=bins)
         if np_hist[0].shape[0] > 512:
@@ -215,6 +242,9 @@ class WandBWriter:
             table_name (str): name of the table to use in the tracker.
             table (DataFrame): table content.
         """
+        if self.disable:
+            return
+
         self.wandb.log(
             {self._object_name(table_name): self.wandb.Table(dataframe=table)},
             step=self.step,
