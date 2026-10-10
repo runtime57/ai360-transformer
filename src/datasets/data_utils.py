@@ -1,8 +1,10 @@
 from itertools import repeat
 
 from hydra.utils import instantiate
+from torch.utils.data.distributed import DistributedSampler
 
 from src.datasets.collate import collate_fn
+from src.utils.dist_utils import is_distributed
 from src.utils.init_utils import set_worker_seed
 
 
@@ -14,7 +16,10 @@ def inf_loop(dataloader):
     Args:
         dataloader (DataLoader): classic finite dataloader.
     """
-    for loader in repeat(dataloader):
+    for epoch, loader in enumerate(repeat(dataloader)):
+        # reshuffle the data on every pass in distributed mode
+        if isinstance(loader.sampler, DistributedSampler):
+            loader.sampler.set_epoch(epoch)
         yield from loader
 
 
@@ -105,12 +110,21 @@ def get_dataloaders(config, device, tokenizer_config=None, logger=None):
             f"be larger than the dataset length ({len(dataset)})"
         )
 
+        is_train = dataset_partition == "train"
+
+        # in distributed mode each process gets its own shard of the data,
+        # batch_size is per process (per GPU)
+        sampler = None
+        if is_distributed():
+            sampler = DistributedSampler(dataset, shuffle=is_train, drop_last=is_train)
+
         partition_dataloader = instantiate(
             config.dataloader,
             dataset=dataset,
             collate_fn=collate_fn,
-            drop_last=(dataset_partition == "train"),
-            shuffle=(dataset_partition == "train"),
+            drop_last=is_train,
+            shuffle=is_train and sampler is None,
+            sampler=sampler,
             worker_init_fn=set_worker_seed,
         )
         dataloaders[dataset_partition] = partition_dataloader

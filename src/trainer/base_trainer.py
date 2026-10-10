@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from contextlib import nullcontext
 
 import torch
 from numpy import inf
@@ -7,7 +8,12 @@ from tqdm.auto import tqdm
 
 from src.datasets.data_utils import inf_loop
 from src.metrics.tracker import MetricTracker
+from src.utils.dist_utils import all_reduce_mean, any_process, barrier, is_main_process
 from src.utils.io_utils import ROOT_PATH
+
+
+class StopTraining(Exception):
+    """Raised on every process when a stop was requested via the stop file."""
 
 
 class BaseTrainer:
@@ -62,6 +68,21 @@ class BaseTrainer:
 
         self.device = device
         self.skip_oom = skip_oom
+        self.is_main = is_main_process()
+
+        # mixed precision: bf16 on Ampere+, fp16 (with grad scaling) on older GPUs (T4, P100)
+        self.amp_dtype = None
+        if self.cfg_trainer.get("amp", False) and torch.device(device).type == "cuda":
+            if torch.cuda.get_device_capability(device)[0] >= 8:
+                self.amp_dtype = torch.bfloat16
+            else:
+                self.amp_dtype = torch.float16
+        if hasattr(torch.amp, "GradScaler"):
+            self.scaler = torch.amp.GradScaler(
+                "cuda", enabled=self.amp_dtype == torch.float16
+            )
+        else:  # torch < 2.3
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self.amp_dtype == torch.float16)
 
         self.logger = logger
         self.log_step = config.trainer.get("log_step", 50)
@@ -135,6 +156,12 @@ class BaseTrainer:
             ROOT_PATH / config.trainer.save_dir / config.writer.run_name
         )
 
+        # create this file to stop training gracefully (works with multi-GPU)
+        self.stop_file = self.checkpoint_dir / "STOP"
+        if self.is_main:
+            self.stop_file.unlink(missing_ok=True)
+        barrier()
+
         if config.trainer.get("resume_from") is not None:
             resume_path = self.checkpoint_dir / config.trainer.resume_from
             self._resume_checkpoint(resume_path)
@@ -152,6 +179,27 @@ class BaseTrainer:
             self.logger.info("Saving model on keyboard interrupt")
             self._save_checkpoint(self._last_epoch, save_best=False)
             raise e
+        except StopTraining:
+            self.logger.info("Stop requested. Saving model")
+            self._save_checkpoint(self._last_epoch, save_best=False)
+            if self.is_main:
+                self.stop_file.unlink(missing_ok=True)
+
+    def _autocast(self):
+        if self.amp_dtype is None:
+            return nullcontext()
+        return torch.autocast(device_type="cuda", dtype=self.amp_dtype)
+
+    def _progress_bar(self, iterable, **kwargs):
+        # no tqdm(disable=True) on other processes: it re-yields via `yield from`
+        # and closes the endless train generator when the epoch loop breaks
+        if not self.is_main:
+            return iterable
+        return tqdm(iterable, **kwargs)
+
+    def _unwrapped_model(self):
+        # DistributedDataParallel keeps the original model in .module
+        return getattr(self.model, "module", self.model)
 
     def _train_process(self):
         """
@@ -203,8 +251,12 @@ class BaseTrainer:
         self.writer.set_step((epoch - 1) * self.epoch_len)
         self.writer.add_scalar("epoch", epoch)
         for batch_idx, batch in enumerate(
-            tqdm(self.train_dataloader, desc="train", total=self.epoch_len)
+            self._progress_bar(self.train_dataloader, desc="train", total=self.epoch_len)
         ):
+            if batch_idx % self.log_step == 0:
+                if any_process(self.stop_file.exists(), self.device):
+                    raise StopTraining()
+
             try:
                 batch = self.process_batch(
                     batch,
@@ -264,7 +316,7 @@ class BaseTrainer:
         self.model.eval()
         self.evaluation_metrics.reset()
         with torch.no_grad():
-            for batch_idx, batch in tqdm(
+            for batch_idx, batch in self._progress_bar(
                 enumerate(dataloader),
                 desc=part,
                 total=len(dataloader),
@@ -273,13 +325,17 @@ class BaseTrainer:
                     batch,
                     metrics=self.evaluation_metrics,
                 )
+            # average over GPUs so that every process makes the same
+            # best-checkpoint / early-stop decision
+            results = all_reduce_mean(self.evaluation_metrics.result(), self.device)
             self.writer.set_step(epoch * self.epoch_len, part)
-            self._log_scalars(self.evaluation_metrics)
+            for metric_name, value in results.items():
+                self.writer.add_scalar(metric_name, value)
             self._log_batch(
                 batch_idx, batch, part
             )  # log only the last batch during inference
 
-        return self.evaluation_metrics.result()
+        return results
 
     def _monitor_performance(self, logs, not_improved_count):
         """
@@ -462,13 +518,18 @@ class BaseTrainer:
                 'model_best.pth'(do not duplicate the checkpoint as
                 checkpoint-epochEpochNumber.pth)
         """
-        arch = type(self.model).__name__
+        if not self.is_main:
+            return
+
+        model = self._unwrapped_model()
+        arch = type(model).__name__
         state = {
             "arch": arch,
             "epoch": epoch,
-            "state_dict": self.model.state_dict(),
+            "state_dict": model.state_dict(),
             "optimizer": self.optimizer.state_dict(),
             "lr_scheduler": self.lr_scheduler.state_dict(),
+            "scaler": self.scaler.state_dict(),
             "monitor_best": self.mnt_best,
             "config": self.config,
         }
@@ -509,7 +570,7 @@ class BaseTrainer:
                 "Warning: Architecture configuration given in the config file is different from that "
                 "of the checkpoint. This may yield an exception when state_dict is loaded."
             )
-        self.model.load_state_dict(checkpoint["state_dict"])
+        self._unwrapped_model().load_state_dict(checkpoint["state_dict"])
 
         # load optimizer state from checkpoint only when optimizer type is not changed.
         if (
@@ -524,6 +585,8 @@ class BaseTrainer:
         else:
             self.optimizer.load_state_dict(checkpoint["optimizer"])
             self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+            if "scaler" in checkpoint:
+                self.scaler.load_state_dict(checkpoint["scaler"])
 
         self.logger.info(
             f"Checkpoint loaded. Resume training from epoch {self.start_epoch}"
@@ -548,6 +611,6 @@ class BaseTrainer:
         checkpoint = torch.load(pretrained_path, self.device, weights_only=False)
 
         if checkpoint.get("state_dict") is not None:
-            self.model.load_state_dict(checkpoint["state_dict"])
+            self._unwrapped_model().load_state_dict(checkpoint["state_dict"])
         else:
-            self.model.load_state_dict(checkpoint)
+            self._unwrapped_model().load_state_dict(checkpoint)

@@ -19,6 +19,7 @@ trainer:
   device_tensors: ["seq", "target"]
   resume_from: null
   device: auto
+  amp: True # mixed precision on CUDA: bf16 on Ampere+, fp16 on T4/P100
   override: False
   monitor: "min val_loss"
   save_period: 2
