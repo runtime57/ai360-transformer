@@ -2,11 +2,11 @@ defaults:
   - model: gpt
   - writer: disabled_wandb
   - metrics: empty
-  - datasets: tiny_shakespeare
+  - datasets: tiny_stories
   - dataloader: main
   - batch_transforms: empty
   - instance_transforms: empty
-  - tokenizer: bpe_shakespeare
+  - tokenizer: bpe_tiny_stories
   - optimizer: adam
   - lr_scheduler: warmup_cosine
   - loss: cross_entropy

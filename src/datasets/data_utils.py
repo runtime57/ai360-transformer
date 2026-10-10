@@ -84,7 +84,13 @@ def get_dataloaders(config, device, tokenizer_config=None, logger=None):
     tokenizer = None
     if tokenizer_config is not None:
         from src.tokenizers import init_tokenizer
-        tokenizer = init_tokenizer(tokenizer_config, log=logger)
+        train_dataset = datasets.get("train")
+        texts = None
+
+        if tokenizer_config.get("use_dataset_get_train_text_func", True) and hasattr(train_dataset, "_get_train_text"):
+            texts = train_dataset._get_train_text()
+
+        tokenizer = init_tokenizer(tokenizer_config, log=logger, texts=texts)
 
     for dataset in datasets.values():
         _set_tokenizer(dataset, tokenizer)

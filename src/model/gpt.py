@@ -12,9 +12,11 @@ class TransformerDecoder(nn.Module):
         self.d_model = d_model
 
         self.token_embedding = nn.Embedding(vocab_size, d_model)
+
+        self.use_trainable_pos_embeds = use_trainable_pos_embeds
         self.pos_embedding = None
-        if use_trainable_pos_embeds:
-            assert max_seq_len is not None
+
+        if use_trainable_pos_embeds and max_seq_len is not None:
             self.pos_embedding = nn.Embedding(max_seq_len, d_model)
 
         self.seq_dropout = nn.Dropout(seq_dropout)
@@ -52,10 +54,15 @@ class TransformerDecoder(nn.Module):
                 nn.init.zeros_(module.in_proj_bias)
 
 
-    def _set_context(self, vocab_size, **context):
+    def _set_context(self, vocab_size, max_seq_len, **context):
         self.vocab_size = vocab_size
         self.token_embedding = nn.Embedding(vocab_size, self.d_model).to(self.token_embedding.weight.device)
         self._init_weights(self.token_embedding)
+
+        self.max_seq_len = max_seq_len
+        if self.use_trainable_pos_embeds:
+            self.pos_embedding = nn.Embedding(max_seq_len, self.d_model)
+            self._init_weights(self.pos_embedding)
 
     def forward(self, seq, **batch):
         # seq: [B, L] (already tokenized)
@@ -97,6 +104,7 @@ class GPT(nn.Module):
         self.decoder = decoder
         self.tokenizer = tokenizer
         self.max_new_tokens = max_new_tokens
+        self.beam_width = beam_width
 
     def _set_tokenizer(self, tokenizer):
         self.tokenizer = tokenizer
@@ -108,6 +116,7 @@ class GPT(nn.Module):
 
     def forward(self, seq, **batch):
         # seq: [B, L] (already tokenized)
+
         return {'logits': self.decoder(seq, **batch)}
 
     def predict(self, seq, **batch):
