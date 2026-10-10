@@ -27,3 +27,5 @@ trainer:
   early_stop: ${trainer.epochs}
   save_dir: "saved"
   seed: 42
+
+max_seq_len: 512

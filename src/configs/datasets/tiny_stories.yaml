@@ -1,14 +1,14 @@
 train:
   _target_: src.datasets.TinyStoriesDataset
   part: "train"
-  max_seq_len: 512
+  max_seq_len: ${max_seq_len}
   val_ratio: 0.01
   tokenization_workers: 8
   transforms: ${instance_transforms.train}
 val:
   _target_: src.datasets.TinyStoriesDataset
   part: "val"
-  max_seq_len: 512
+  max_seq_len: ${max_seq_len}
   val_ratio: 0.01
   tokenization_workers: 8
   transforms: ${instance_transforms.inference}

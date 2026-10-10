@@ -5,11 +5,26 @@ from .transformer_utils.transformer_block import TransformerBlock
 
 
 class TransformerDecoder(nn.Module):
-    def __init__(self, d_model, vocab_size, num_layers, num_heads, seq_dropout=0.1, ffn_dropout=0.1, attn_dropout=0.1, use_trainable_pos_embeds=False, max_seq_len=None):
+    def __init__(
+        self,
+        d_model,
+        vocab_size,
+        num_layers,
+        num_heads,
+        seq_dropout=0.1,
+        ffn_dropout=0.1,
+        attn_dropout=0.1,
+        use_trainable_pos_embeds=False,
+        max_seq_len=None,
+        use_rope=False,
+        use_only_rope=True,
+        rope_base=10000.0
+    ):
         super().__init__()
 
         self.vocab_size = vocab_size
         self.d_model = d_model
+        self.use_only_rope = use_rope & use_only_rope
 
         self.token_embedding = nn.Embedding(vocab_size, d_model)
 
@@ -27,7 +42,10 @@ class TransformerDecoder(nn.Module):
                 mlp_hidden_dim=4 * d_model,
                 num_heads=num_heads,
                 ffn_dropout=ffn_dropout,
-                attn_dropout=attn_dropout
+                attn_dropout=attn_dropout,
+                use_rope=use_rope,
+                rope_base=rope_base,
+                max_seq_len=max_seq_len
             ) for _ in range(num_layers)
         ])
 
@@ -54,15 +72,11 @@ class TransformerDecoder(nn.Module):
                 nn.init.zeros_(module.in_proj_bias)
 
 
-    def _set_context(self, vocab_size, max_seq_len, **context):
+    def _set_context(self, vocab_size, **context):
         self.vocab_size = vocab_size
         self.token_embedding = nn.Embedding(vocab_size, self.d_model).to(self.token_embedding.weight.device)
         self._init_weights(self.token_embedding)
 
-        self.max_seq_len = max_seq_len
-        if self.use_trainable_pos_embeds:
-            self.pos_embedding = nn.Embedding(max_seq_len, self.d_model)
-            self._init_weights(self.pos_embedding)
 
     def forward(self, seq, **batch):
         # seq: [B, L] (already tokenized)
@@ -71,7 +85,9 @@ class TransformerDecoder(nn.Module):
         device = seq.device
 
         pos = torch.arange(L, device=device)
-        if self.pos_embedding is not None:
+        if self.use_only_rope:
+            pos_embed = torch.zeros(1, device=device)
+        elif self.use_trainable_pos_embeds:
             pos_embed = self.pos_embedding(pos)
         else:
             dims = torch.arange(self.d_model, device=device)
