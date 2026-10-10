@@ -9,7 +9,7 @@ decoder:
   ffn_dropout: 0.1
   attn_dropout: 0.1
   use_trainable_pos_embeds: False
-  max_seq_len: None
+  max_seq_len: null
 beam_width: 8
 context_len: 512
 max_new_tokens: 2048

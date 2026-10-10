@@ -1,0 +1,5 @@
+instance:
+  _target_: src.tokenizers.CharacterTokenizer
+vocab_path: "data/tokenizer/character/tinystory.json"
+train_corpus_path: "data/tinystory/processed/train.txt"
+override: false

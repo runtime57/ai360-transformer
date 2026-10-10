@@ -38,7 +38,7 @@ class TransformerDecoder(nn.Module):
             nn.init.normal_(module.weight, std=0.02)
             if module.padding_idx is not None:
                 with torch.no_grad():
-                    module.weight.data[module.padding_idx].zero()
+                    module.weight.data[module.padding_idx].zero_()
         elif isinstance(module, nn.Linear):
             nn.init.normal_(module.weight, std=0.02)
             if module.bias is not None:
@@ -110,15 +110,17 @@ class GPT(nn.Module):
         # seq: [B, L] (already tokenized)
         return {'logits': self.decoder(seq, **batch)}
 
+    @torch.no_grad()
     def predict(self, seq, **batch):
         # seq: [1, L] (already tokenized)
 
-        added_tokens = 0
-        while seq[-1] != self.tokenizer.token_to_id['<eos>'] and added_tokens < self.max_new_tokens:
+        eos_id = self.tokenizer.token_to_id['<eos>']
+        for _ in range(self.max_new_tokens):
             x = seq[:, -self.context_len:]
-            logits = self.decoder(x, **batch)[1, -1, :]
-            best = logits.argmax()
-            seq = torch.cat([seq, best])
-            added_tokens += 1
+            logits = self.decoder(x, **batch)[:, -1, :]
+            best = logits.argmax(dim=-1, keepdim=True)
+            seq = torch.cat([seq, best], dim=1)
+            if best.item() == eos_id:
+                break
 
         return {"seq": seq}

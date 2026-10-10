@@ -1,0 +1,7 @@
+instance:
+  _target_: src.tokenizers.BpeTokenizer
+  vocab_size: 4096
+  min_frequency: 2
+vocab_path: "data/tokenizer/bpe/tinystory.json"
+train_corpus_path: "data/tinystory/processed/train.txt"
+override: false

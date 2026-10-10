@@ -1,0 +1,5 @@
+defaults:
+  - train
+  - override datasets: tinystory
+  - override tokenizer: bpe_tinystory
+  - _self_

@@ -1,77 +1,84 @@
-import numpy as np
 import torch
 from tqdm.auto import tqdm
 
 from datasets import load_dataset
 
-from src.datasets.base_dataset import BaseDataset
-from src.utils.io_utils import ROOT_PATH, read_json, write_json
+from src.utils.io_utils import ROOT_PATH, write_txt
 
 
-class TinyStoryDataset(BaseDataset):
+class TinyStoryDataset:
+    HF_NAME = "roneneldan/TinyStories"
+    HF_SPLITS = {"train": "train", "val": "validation"}
 
-    def __init__(
-        self, name="train", *args, **kwargs
-    ):
-        """
-        Args:
-            name (str): partition name
-        """
-        index_path = ROOT_PATH / "data" / "tinystory" / name / "index.json"
+    def __init__(self, part, max_seq_len, limit=None, tokenizer=None, override=False, processed_dir_path=None, transforms=None):
+        assert part in self.HF_SPLITS
 
-        if index_path.exists():
-            index = read_json(str(index_path))
-        else:
-            index = self._create_index(name)
+        self.part = part
+        self.max_seq_len = max_seq_len
+        self.transforms = transforms
 
-        super().__init__(index, *args, **kwargs)
+        ds = load_dataset(self.HF_NAME, split=self.HF_SPLITS[part])
+        if limit is not None:
+            ds = ds.shuffle(seed=42).select(range(min(limit, len(ds))))
+        self.texts = ds["text"]
 
-    def _create_index(self, name):
-        """
-        Create index for the dataset. The function processes dataset metadata
-        and utilizes it to get information dict for each element of
-        the dataset.
-        """
-        index = []
-        data_path = ROOT_PATH / "data" / "tinystory" / name
-        data_path.mkdir(exist_ok=True, parents=True)
-        ds = load_dataset("roneneldan/TinyStories")
-        ds['train']
-        if name == "train":
-            ds = load_dataset("roneneldan/TinyStories", split="train")
-            ds=ds.shuffle(seed=42)
-            n=len(ds)
-            n*=0.99
-            n = int(n)
-            ds = ds.select(range(n))  
-        elif name == "val":
-            ds = load_dataset("roneneldan/TinyStories", split="validation")
-        else:
-            ds = load_dataset("roneneldan/TinyStories", split="train")
-            ds=ds.shuffle(seed=42)
-            n=len(ds)
-            n*=0.99
-            n = int(n)
-            ds = ds.select(range(n, len(ds)))  
-        processed_ds = self._tokeinse(ds)
-        for i, row in enumerate(processed_ds):
-            path = data_path / f"{i}.pt"
-            torch.save(torch.tensor(row), path)
-            index.append({"path": str(path)})
-        write_json(index, str(data_path / "index.json"))
-        return index
+        if processed_dir_path is None:
+            processed_dir_path = ROOT_PATH / "data" / "tinystory" / "processed"
 
-    def _tokeinse(self, ds):
-        vocab_path = ROOT_PATH / "data" / "tinystory" / "vocab.json"
-        if vocab_path.exists():
-            ch_to_int = read_json(str(vocab_path))
-        else:
-            chars = set()
-            for batch in tqdm(ds.iter(batch_size=10_000), desc="vocab"):
-                chars.update("".join(batch["text"]))
-            ch_to_int = {c: i for i, c in enumerate(sorted(chars))}
-            write_json(ch_to_int, str(vocab_path))
-        for batch in tqdm(ds.iter(batch_size=10_000), desc="tokenize"):
-            for text in batch["text"]:
-                yield [ch_to_int.get(c, 0) for c in text]   # yield вместо res.append: не держим всё в памяти
-            
+        # plain-text corpus is used to train the tokenizer (see tokenizer config)
+        self.processed_file_path = processed_dir_path / f"{part}.txt"
+        if override or not self.processed_file_path.exists():
+            processed_dir_path.mkdir(exist_ok=True, parents=True)
+            write_txt("\n".join(self.texts), self.processed_file_path)
+
+        self.tokenizer = None
+        self.tokens = None
+        if tokenizer is not None:
+            self._set_tokenizer(tokenizer)
+
+    def __len__(self):
+        return self.tokens.shape[0]
+
+    def _tokenize(self):
+        # every story is wrapped in <bos> ... <eos>, then stories are packed together
+        ids = []
+        for text in tqdm(self.texts, desc=f"tokenize {self.part}"):
+            ids.extend(self.tokenizer.encode(text))
+        return torch.as_tensor(ids, dtype=torch.long)
+
+    def _split_by_maxlen(self, tokens, max_seq_len):
+        pad_len = (-tokens.shape[0]) % max_seq_len
+
+        if pad_len > 0:
+            pad_id = self.tokenizer.token_to_id["<pad>"]
+            padding = torch.full((pad_len,), pad_id, dtype=tokens.dtype, device=tokens.device)
+            tokens = torch.cat([tokens, padding])
+
+        return tokens.reshape(-1, max_seq_len)
+
+    def _set_tokenizer(self, tokenizer):
+        self.tokenizer = tokenizer
+        self.tokens = self._split_by_maxlen(self._tokenize(), self.max_seq_len + 1)
+
+    def _get_context(self):
+        return {
+            "part": self.part,
+            "vocab_size": len(self.tokenizer.id_to_token),
+            "ignore_class_id": self.tokenizer.token_to_id['<pad>']
+        }
+
+    def preprocess_data(self, instance_data):
+        if self.transforms is not None:
+            for transform in self.transforms:
+                instance_data.update(transform(**instance_data))
+        return instance_data
+
+    def __getitem__(self, idx):
+        data = self.tokens[idx]
+
+        seq, target = data[:-1], data[1:]
+
+        instance_data = {"seq": seq, "target": target}
+        instance_data = self.preprocess_data(instance_data)
+
+        return instance_data

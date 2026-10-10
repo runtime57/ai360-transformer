@@ -1,0 +1,14 @@
+train:
+  _target_: src.datasets.TinyStoryDataset
+  part: "train"
+  max_seq_len: 256
+  limit: 200000 # number of stories; null = full dataset (~2.1M stories)
+  override: true
+  transforms: ${instance_transforms.train}
+val:
+  _target_: src.datasets.TinyStoryDataset
+  part: "val"
+  max_seq_len: 256
+  limit: 5000
+  override: true
+  transforms: ${instance_transforms.inference}
