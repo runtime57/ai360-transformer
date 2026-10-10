@@ -1,11 +1,12 @@
 import torch.nn as nn
 import torch
 
+from .transformer_utils.rmsn import RMSNorm
 from .transformer_utils.transformer_block import TransformerBlock
 
 
 class TransformerDecoder(nn.Module):
-    def __init__(self, d_model, vocab_size, num_layers, num_heads, seq_dropout=0.1, ffn_dropout=0.1, attn_dropout=0.1, use_trainable_pos_embeds=False, max_seq_len=None):
+    def __init__(self, d_model, vocab_size, num_layers, num_heads, seq_dropout=0.1, ffn_dropout=0.1, attn_dropout=0.1, norm="rmsn", use_trainable_pos_embeds=False, max_seq_len=None):
         super().__init__()
 
         self.vocab_size = vocab_size
@@ -25,11 +26,14 @@ class TransformerDecoder(nn.Module):
                 mlp_hidden_dim=4 * d_model,
                 num_heads=num_heads,
                 ffn_dropout=ffn_dropout,
-                attn_dropout=attn_dropout
+                attn_dropout=attn_dropout,
+                norm=norm
             ) for _ in range(num_layers)
         ])
-
-        self.final_norm = nn.LayerNorm(d_model)
+        if norm == "rmsn":
+            self.final_norm = RMSNorm(d_model)
+        else:
+            self.final_norm = nn.LayerNorm(d_model)
 
         self.apply(self._init_weights)
 
@@ -43,6 +47,8 @@ class TransformerDecoder(nn.Module):
             nn.init.normal_(module.weight, std=0.02)
             if module.bias is not None:
                 nn.init.constant_(module.bias, 0)
+        elif isinstance(module, RMSNorm):
+            nn.init.constant_(module.weight, 1.0)
         elif isinstance(module, nn.LayerNorm):
             nn.init.constant_(module.bias, 0)
             nn.init.constant_(module.weight, 1.0)

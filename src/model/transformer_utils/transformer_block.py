@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
+from src.model.transformer_utils.rmsn import RMSNorm
 
 from torch import Tensor
 
@@ -62,13 +63,18 @@ class TransformerBlock(nn.Module):
         num_heads: int,
         ffn_dropout: float = 0.0,
         attn_dropout: float = 0.0,
+        norm="rmsn"
     ):
         super().__init__()
-        self.norm1 = nn.LayerNorm(d_model)
+        if norm == "rmsn":
+            self.norm1 = RMSNorm(d_model)
+            self.norm2 = RMSNorm(d_model)
+        else:
+            self.norm1 = nn.LayerNorm(d_model)
+            self.norm2 = nn.LayerNorm(d_model)
         self.attention = CausalSelfAttention(d_model, num_heads, attn_dropout)
         self.attn_dropout = nn.Dropout(attn_dropout)
 
-        self.norm2 = nn.LayerNorm(d_model)
         self.feed_forward = MLP(d_model, mlp_hidden_dim, ffn_dropout)
         self.ffn_dropout = nn.Dropout(ffn_dropout)
 
