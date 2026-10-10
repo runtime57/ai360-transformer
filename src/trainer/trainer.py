@@ -34,17 +34,28 @@ class Trainer(BaseTrainer):
             metric_funcs = self.metrics["train"]
             self.optimizer.zero_grad()
 
-        outputs = self.model(**batch)
-        batch.update(outputs)
+        with self._autocast_context():
+            outputs = self.model(**batch)
+            batch.update(outputs)
 
-        all_losses = self.criterion(**batch)
-        batch.update(all_losses)
+            all_losses = self.criterion(**batch)
+            batch.update(all_losses)
 
         if self.is_train:
-            batch["loss"].backward()
-            self._clip_grad_norm()
-            self.optimizer.step()
-            if self.lr_scheduler is not None:
+            optimizer_updated = True
+            if self.scaler is not None:
+                self.scaler.scale(batch["loss"]).backward()
+                self.scaler.unscale_(self.optimizer)
+                self._clip_grad_norm()
+                previous_scale = self.scaler.get_scale()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+                optimizer_updated = self.scaler.get_scale() >= previous_scale
+            else:
+                batch["loss"].backward()
+                self._clip_grad_norm()
+                self.optimizer.step()
+            if self.lr_scheduler is not None and optimizer_updated:
                 self.lr_scheduler.step()
 
         for loss_name in self.config.writer.loss_names:
