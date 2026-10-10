@@ -1,5 +1,5 @@
 defaults:
-  - model: gpt
+  - model: gpt_rope
   - writer: disabled_wandb
   - metrics: empty
   - datasets: tiny_stories
@@ -13,7 +13,7 @@ defaults:
   - _self_
 
 trainer:
-  log_step: 50
+  log_step: 100
   epochs: 10
   epoch_len: null
   device_tensors: ["seq", "target"]
