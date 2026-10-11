@@ -3,10 +3,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from torch import Tensor
+from src.model.transformer_utils.alibi import alibi_bias
 
 
 class CausalSelfAttention(nn.Module):
-    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.0, use_rope: bool = False, rope_base: float = 10000.0, max_seq_len=None):
+    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.0, use_rope: bool = False, rope_base: float = 10000.0, max_seq_len=None, use_alibi: bool = False):
         super().__init__()
         assert d_model % num_heads == 0
 
@@ -18,6 +19,8 @@ class CausalSelfAttention(nn.Module):
         self.rope_base = rope_base
         self.max_seq_len = max_seq_len
         assert not use_rope or self.head_dim % 2 == 0
+
+        self.use_alibi = use_alibi
 
         self.qkv = nn.Linear(d_model, 3 * d_model, bias=True)
         self.proj = nn.Linear(d_model, d_model, bias=True)
@@ -70,11 +73,15 @@ class CausalSelfAttention(nn.Module):
             q = self.apply_rope(q, cos, sin)
             k = self.apply_rope(k, cos, sin)
 
+        attn_mask = None
+        if self.use_alibi:
+            attn_mask = alibi_bias(self.num_heads, T, x.device).to(q.dtype)
+
         y = F.scaled_dot_product_attention(
             q, k, v,
-            attn_mask=None,
+            attn_mask=attn_mask,
             dropout_p=self.dropout if self.training else 0.0,
-            is_causal=True,
+            is_causal=not self.use_alibi,
         )
 
         y = y.transpose(1, 2).contiguous().view(B, T, D)
@@ -108,11 +115,12 @@ class TransformerBlock(nn.Module):
         attn_dropout: float = 0.0,
         use_rope: bool = False,
         rope_base: float = 10000.0,
-        max_seq_len = None
+        max_seq_len = None,
+        use_alibi: bool = False
     ):
         super().__init__()
         self.norm1 = nn.LayerNorm(d_model)
-        self.attention = CausalSelfAttention(d_model, num_heads, attn_dropout, use_rope, rope_base, max_seq_len)
+        self.attention = CausalSelfAttention(d_model, num_heads, attn_dropout, use_rope, rope_base, max_seq_len, use_alibi)
         self.attn_dropout = nn.Dropout(attn_dropout)
 
         self.norm2 = nn.LayerNorm(d_model)
