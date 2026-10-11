@@ -79,7 +79,8 @@ class ShakespeareDataset:
         return {
             "part": self.part,
             "vocab_size": len(self.tokenizer.id_to_token),
-            "ignore_class_id": self.tokenizer.token_to_id['<pad>']
+            "ignore_class_id": self.tokenizer.token_to_id['<pad>'],
+            "max_seq_len": self.max_seq_len
         }
 
     def preprocess_data(self, instance_data):

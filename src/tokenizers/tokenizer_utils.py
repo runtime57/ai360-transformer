@@ -35,7 +35,7 @@ def _iter_texts(corpus_path: Path, text_field: str | None) -> Iterator[str]:
                 yield line
 
 
-def init_tokenizer(config, allow_build: bool = True, log=None):
+def init_tokenizer(config, allow_build: bool = True, log=None, texts=None):
     """Instantiate a tokenizer and either load or build its vocabulary.
 
     Args:
@@ -67,14 +67,16 @@ def init_tokenizer(config, allow_build: bool = True, log=None):
             "Build it during training first."
         )
 
-    corpus_path = Path(to_absolute_path(config.train_corpus_path))
-    if not corpus_path.is_file():
-        raise FileNotFoundError(
-            f"Tokenizer training corpus was not found at '{corpus_path}'."
-        )
+    if texts is None:
+        corpus_path = Path(to_absolute_path(config.train_corpus_path))
+        if not corpus_path.is_file():
+            raise FileNotFoundError(
+                f"Tokenizer training corpus was not found at '{corpus_path}'."
+            )
+        texts = _iter_texts(corpus_path, config.get("text_field"))
 
-    active_logger.info("Building tokenizer vocabulary from %s", corpus_path)
-    tokenizer.train(_iter_texts(corpus_path, config.get("text_field")))
+    active_logger.info("Building tokenizer vocabulary")
+    tokenizer.train(texts)
     tokenizer.save_vocab(vocab_path)
     active_logger.info("Saved tokenizer vocabulary to %s", vocab_path)
     return tokenizer

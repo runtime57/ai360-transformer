@@ -33,7 +33,7 @@ def main(config):
     writer = instantiate(config.writer, logger, project_config)
 
     if config.trainer.device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
     else:
         device = config.trainer.device
 

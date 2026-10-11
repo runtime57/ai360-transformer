@@ -1,0 +1,31 @@
+defaults:
+  - model: gpt_rope
+  - writer: disabled_wandb
+  - metrics: empty
+  - datasets: tiny_stories
+  - dataloader: main
+  - batch_transforms: empty
+  - instance_transforms: empty
+  - tokenizer: bpe_tiny_stories
+  - optimizer: adam
+  - lr_scheduler: warmup_cosine
+  - loss: cross_entropy
+  - _self_
+
+trainer:
+  log_step: 100
+  epochs: 10
+  epoch_len: null
+  device_tensors: ["seq", "target"]
+  resume_from: null
+  use_amp: True
+  amp_dtype: float16
+  device: auto
+  override: False
+  monitor: "min val_loss"
+  save_period: 2
+  early_stop: ${trainer.epochs}
+  save_dir: "saved"
+  seed: 42
+
+max_seq_len: 512

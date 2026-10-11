@@ -1,0 +1,7 @@
+instance:
+  _target_: src.tokenizers.BpeTokenizer
+  vocab_size: 4096
+  min_frequency: 2
+use_dataset_get_train_text_func: True
+vocab_path: "data/tokenizer/bpe/tiny_stories.json"
+override: false

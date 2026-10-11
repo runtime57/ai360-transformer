@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from contextlib import nullcontext
 
 import torch
 from numpy import inf
@@ -72,6 +73,8 @@ class BaseTrainer:
         self.lr_scheduler = lr_scheduler
         self.batch_transforms = batch_transforms
 
+        self._init_amp_config(self.cfg_trainer)
+
         # define dataloaders
         self.train_dataloader = dataloaders["train"]
         if epoch_len is None:
@@ -141,6 +144,27 @@ class BaseTrainer:
 
         if config.trainer.get("from_pretrained") is not None:
             self._from_pretrained(config.trainer.get("from_pretrained"))
+
+    def _init_amp_config(self, config):
+        self.use_amp = config.get("use_amp", False)
+        self.amp_dtype = self._resolve_amp_dtype(config.get("amp_dtype", "float16"))
+        self.amp_device_type = torch.device(self.device).type
+        self.scaler = None
+        if self.use_amp and self.amp_device_type == "cuda" and self.amp_dtype == torch.float16:
+            self.scaler = torch.amp.GradScaler("cuda")
+
+    def _resolve_amp_dtype(self, dtype_name):
+        dtype_name = str(dtype_name).lower()
+        if dtype_name in {"float16", "fp16", "half"}:
+            return torch.float16
+        if dtype_name in {"bfloat16", "bf16"}:
+            return torch.bfloat16
+        raise ValueError(f"Unsupported AMP dtype: {dtype_name}. Supported: float16, bfloat16.")
+
+    def _autocast_context(self):
+        if not self.use_amp:
+            return nullcontext()
+        return torch.autocast(device_type=self.amp_device_type, dtype=self.amp_dtype)
 
     def train(self):
         """
@@ -468,7 +492,8 @@ class BaseTrainer:
             "epoch": epoch,
             "state_dict": self.model.state_dict(),
             "optimizer": self.optimizer.state_dict(),
-            "lr_scheduler": self.lr_scheduler.state_dict(),
+            "lr_scheduler": self.lr_scheduler.state_dict() if self.lr_scheduler is not None else None,
+            "scaler": self.scaler.state_dict() if self.scaler is not None else None,
             "monitor_best": self.mnt_best,
             "config": self.config,
         }
@@ -523,7 +548,10 @@ class BaseTrainer:
             )
         else:
             self.optimizer.load_state_dict(checkpoint["optimizer"])
-            self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+            if self.lr_scheduler is not None and checkpoint.get("lr_scheduler") is not None:
+                self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+            if self.scaler is not None and checkpoint.get("scaler"):
+                self.scaler.load_state_dict(checkpoint["scaler"])
 
         self.logger.info(
             f"Checkpoint loaded. Resume training from epoch {self.start_epoch}"
