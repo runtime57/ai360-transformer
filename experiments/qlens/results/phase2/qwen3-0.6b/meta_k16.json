@@ -1,0 +1,156 @@
+{
+  "config": {
+    "model": "Qwen/Qwen3-0.6B",
+    "tag": "qwen3-0.6b",
+    "seed": 0,
+    "data": {
+      "seed": 0,
+      "n_fit": 100,
+      "n_hess": 64,
+      "n_heldout": 100
+    },
+    "layer_pcts": [
+      0.15,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9
+    ],
+    "last_k": 3,
+    "k": 16,
+    "n_ctx": 4,
+    "S": 2,
+    "batch": 136,
+    "top_tokens": 25,
+    "pca_per_seq": 40,
+    "deltaf_per_seq": 2,
+    "jlens_repo": "/workspace/ext/jacobian-lens",
+    "band": [
+      0.4,
+      0.9
+    ]
+  },
+  "git": "af763e7+code.9d1330eaac92",
+  "seed": 0,
+  "layers": [
+    4,
+    11,
+    14,
+    17,
+    20,
+    22,
+    24,
+    25,
+    26
+  ],
+  "n_pairs": 136,
+  "subspace": {
+    "4": {
+      "captured_frac_mean": 0.06617388874292374,
+      "captured_frac_pooled": 0.06380792707204819,
+      "jspace_frac_of_delta_mean": 0.11550863087177277,
+      "pca_explained_of_jspace": 0.45988085865974426
+    },
+    "11": {
+      "captured_frac_mean": 0.06697537750005722,
+      "captured_frac_pooled": 0.06848269701004028,
+      "jspace_frac_of_delta_mean": 0.10902160406112671,
+      "pca_explained_of_jspace": 0.5158768892288208
+    },
+    "14": {
+      "captured_frac_mean": 0.05584456026554108,
+      "captured_frac_pooled": 0.056910499930381775,
+      "jspace_frac_of_delta_mean": 0.08644522726535797,
+      "pca_explained_of_jspace": 0.5314152836799622
+    },
+    "17": {
+      "captured_frac_mean": 0.05625305697321892,
+      "captured_frac_pooled": 0.05608556419610977,
+      "jspace_frac_of_delta_mean": 0.07813295722007751,
+      "pca_explained_of_jspace": 0.5422425866127014
+    },
+    "20": {
+      "captured_frac_mean": 0.08655103296041489,
+      "captured_frac_pooled": 0.0827898383140564,
+      "jspace_frac_of_delta_mean": 0.1091635599732399,
+      "pca_explained_of_jspace": 0.5363256335258484
+    },
+    "22": {
+      "captured_frac_mean": 0.09844505786895752,
+      "captured_frac_pooled": 0.091805100440979,
+      "jspace_frac_of_delta_mean": 0.12624911963939667,
+      "pca_explained_of_jspace": 0.532953679561615
+    },
+    "24": {
+      "captured_frac_mean": 0.10301501303911209,
+      "captured_frac_pooled": 0.094642274081707,
+      "jspace_frac_of_delta_mean": 0.13270801305770874,
+      "pca_explained_of_jspace": 0.5377112030982971
+    },
+    "25": {
+      "captured_frac_mean": 0.09743477404117584,
+      "captured_frac_pooled": 0.0909128338098526,
+      "jspace_frac_of_delta_mean": 0.12471652776002884,
+      "pca_explained_of_jspace": 0.5524181127548218
+    },
+    "26": {
+      "captured_frac_mean": 0.0810120478272438,
+      "captured_frac_pooled": 0.0755520910024643,
+      "jspace_frac_of_delta_mean": 0.09036365896463394,
+      "pca_explained_of_jspace": 0.5704289674758911
+    }
+  },
+  "Hbar_pairs_vs_null": {
+    "4": {
+      "pair_norm_mean": 4.077514171600342,
+      "pair_null_mean": 3.992476463317871
+    },
+    "11": {
+      "pair_norm_mean": 0.6410048604011536,
+      "pair_null_mean": 0.5869525671005249
+    },
+    "14": {
+      "pair_norm_mean": 0.3636322617530823,
+      "pair_null_mean": 0.3159026801586151
+    },
+    "17": {
+      "pair_norm_mean": 0.11469994485378265,
+      "pair_null_mean": 0.0927196517586708
+    },
+    "20": {
+      "pair_norm_mean": 0.022045955061912537,
+      "pair_null_mean": 0.015794847160577774
+    },
+    "22": {
+      "pair_norm_mean": 0.011652560904622078,
+      "pair_null_mean": 0.007205465342849493
+    },
+    "24": {
+      "pair_norm_mean": 0.007920200005173683,
+      "pair_null_mean": 0.004465274512767792
+    },
+    "25": {
+      "pair_norm_mean": 0.005559458862990141,
+      "pair_null_mean": 0.0029153621289879084
+    },
+    "26": {
+      "pair_norm_mean": 0.008614439517259598,
+      "pair_null_mean": 0.0032014651224017143
+    }
+  },
+  "C2_other_layer": {
+    "4": 20,
+    "11": 22,
+    "14": 24,
+    "17": 25,
+    "20": 26,
+    "22": 4,
+    "24": 11,
+    "25": 14,
+    "26": 17
+  },
+  "delta_f_seconds": 77.68208754621446,
+  "eval_seconds": 175.48768662614748
+}

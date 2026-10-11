@@ -1,0 +1,30 @@
+{
+ "4": {
+  "M": 128,
+  "frac_dirs_positive_sq": 0.8199999928474426,
+  "debiased_rel_size_mean": 0.8028137653276045,
+  "debiased_rel_size_median": 0.8080356235518816,
+  "debiased_norm_mean": 122.69395767187605
+ },
+ "11": {
+  "M": 128,
+  "frac_dirs_positive_sq": 1.0,
+  "debiased_rel_size_mean": 1.3201607289975816,
+  "debiased_rel_size_median": 0.8323237371212774,
+  "debiased_norm_mean": 381.458566597699
+ },
+ "18": {
+  "M": 128,
+  "frac_dirs_positive_sq": 1.0,
+  "debiased_rel_size_mean": 0.6176209794734262,
+  "debiased_rel_size_median": 0.5969601968523133,
+  "debiased_norm_mean": 222.48162687679599
+ },
+ "25": {
+  "M": 64,
+  "frac_dirs_positive_sq": 1.0,
+  "debiased_rel_size_mean": 0.3202390004099692,
+  "debiased_rel_size_median": 0.308593779454914,
+  "debiased_norm_mean": 219.8297102023943
+ }
+}

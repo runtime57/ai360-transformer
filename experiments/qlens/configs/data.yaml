@@ -1,0 +1,5 @@
+# shared data spec (copied into every run config)
+seed: 0
+n_fit: 100
+n_hess: 64
+n_heldout: 100

@@ -1,0 +1,7 @@
+model: Qwen/Qwen3-0.6B
+tag: qwen3-0.6b
+seed: 0
+data: {seed: 0, n_fit: 100, n_hess: 64, n_heldout: 100}
+dim_batch: 128          # jlens.fit: rows of J per backward; FLOPs unchanged
+jlens_repo: /workspace/ext/jacobian-lens
+band: [0.4, 0.9]

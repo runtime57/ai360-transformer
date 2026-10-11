@@ -1,0 +1,15 @@
+model: Qwen/Qwen3-0.6B
+tag: qwen3-0.6b
+seed: 0
+data: {seed: 0, n_fit: 100, n_hess: 64, n_heldout: 100}
+layer_pcts: [0.15, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90]
+last_k: 3                # + the last 3 fitted layers (SHL)
+k: 16                    # subspace size -> 136 pairs; allowed minimum k=8
+n_ctx: 4                 # DEBUG run of the pipeline
+S: 2
+batch: 136               # pairs per nested-JVP call
+top_tokens: 25           # J-space decomposition of each activation
+pca_per_seq: 40          # activations per fit sequence for the PCA (100 x 40 = 4000)
+deltaf_per_seq: 2
+jlens_repo: /workspace/ext/jacobian-lens
+band: [0.4, 0.9]

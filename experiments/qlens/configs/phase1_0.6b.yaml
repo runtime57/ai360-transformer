@@ -1,0 +1,12 @@
+model: Qwen/Qwen3-0.6B
+tag: qwen3-0.6b
+seed: 0
+data: {seed: 0, n_fit: 100, n_hess: 64, n_heldout: 100}
+layer_pcts: [0.15, 0.40, 0.65, 0.90]
+n_dirs: 100
+S: 2
+blocks: [16, 32, 64]     # max; allowed minimum N=32 and layers {15%, 65%}
+n_ctx_max: 64
+batch: 100               # directions per nested-JVP call
+n_null: 200              # sign-flip resamples
+ratio_tol: 0.15          # |N/(N/2) norm ratio - 1| <= tol counts as ~1

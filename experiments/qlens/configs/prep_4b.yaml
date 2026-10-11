@@ -1,0 +1,9 @@
+model: Qwen/Qwen3-4B
+tag: qwen3-4b
+seed: 0
+data: {seed: 0, n_fit: 100, n_hess: 64, n_heldout: 100}
+pretrained_lens:          # Neuronpedia, fitted with jlens on WikiText-103 train, 479x128 tok, bf16
+  repo: neuronpedia/jacobian-lens
+  file: qwen3-4b/jlens/Salesforce-wikitext/Qwen3-4B_jacobian_lens.pt
+jlens_repo: /workspace/ext/jacobian-lens
+band: [0.4, 0.9]

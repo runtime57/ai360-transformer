@@ -1,0 +1,7 @@
+model: Qwen/Qwen3-0.6B
+seed: 0
+out_dir: results/phase0/qwen3-0.6b
+data: {seed: 0, n_fit: 100, n_hess: 64, n_heldout: 100}
+check_layers: [4, 11, 18, 25]   # 15/40/65/90% of 28
+check_positions: [16, 70, 125]
+fd_eps: [1.0e-2, 3.0e-3, 1.0e-3, 3.0e-4, 1.0e-4]
