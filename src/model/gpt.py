@@ -77,7 +77,7 @@ class TransformerDecoder(nn.Module):
         self.token_embedding = nn.Embedding(vocab_size, self.d_model).to(self.token_embedding.weight.device)
         self._init_weights(self.token_embedding)
 
-    def forward(self, seq, training = False, **batch):
+    def forward(self, seq, training = False, inference = False, **batch):
         B, L = seq.shape
         device = seq.device
 
@@ -96,33 +96,33 @@ class TransformerDecoder(nn.Module):
                 torch.cos(angles),
             )
 
-        seq0 = seq
+        res = {}
+        all_logits = []
+        if training and len(self.transformer_blocks) > 1:
+            stop_idx = torch.randint(1, len(self.transformer_blocks), (1,)).item()
+
         seq = self.d_model**0.5 * self.token_embedding(seq)
         seq = seq + pos_embed
         seq = self.seq_dropout(seq)
 
-        for block in self.transformer_blocks:
+        for i, block in enumerate(self.transformer_blocks):
             seq = block(seq)
+            if training and len(self.transformer_blocks) > 1 and i + 1 == stop_idx:
+                tmp_embeds = self.final_norm(seq)
+                prefix_logits = tmp_embeds @ self.token_embedding.weight.T
+                res["prefix_logits"] = prefix_logits
+            if inference:
+                tmp_embeds = self.final_norm(seq)
+                prefix_logits = tmp_embeds @ self.token_embedding.weight.T
+                all_logits.append(prefix_logits)
+
+        if inference:
+            return all_logits
 
         embeds = self.final_norm(seq)
         logits = embeds @ self.token_embedding.weight.T
         
-        if training and len(self.transformer_blocks):
-            stop_idx = torch.randint(1, len(self.transformer_blocks), (1,)).item()
-            seq = self.d_model**0.5 * self.token_embedding(seq0)
-            seq = seq + pos_embed
-            seq = self.seq_dropout(seq)
-    
-            for block in self.transformer_blocks:
-                seq = block(seq)
-                stop_idx-=1
-                if stop_idx == 0:
-                    break
-    
-            embeds = self.final_norm(seq)
-            prefix_logits = embeds @ self.token_embedding.weight.T
-            return {"logits" : logits, "prefix_logits" : prefix_logits}
-        
+        res["logits"] = logits
         return { "logits" : logits }
 
 class GPT(nn.Module):

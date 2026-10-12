@@ -119,7 +119,7 @@ class Inferencer(BaseTrainer):
         batch = self.move_batch_to_device(batch)
         batch = self.transform_batch(batch)  # transform batch on device -- faster
 
-        outputs = self.model(**batch)
+        outputs = self.model(inference = True, **batch)
         batch.update(outputs)
 
         if metrics is not None:
@@ -129,28 +129,28 @@ class Inferencer(BaseTrainer):
         # Some saving logic. This is an example
         # Use if you need to save predictions on disk
 
-        batch_size = batch["logits"].shape[0]
-        current_id = batch_idx * batch_size
+        # batch_size = batch["all_logits"].shape[0]
+        # current_id = batch_idx * batch_size
 
-        for i in range(batch_size):
-            # clone because of
-            # https://github.com/pytorch/pytorch/issues/1995
-            logits = batch["logits"][i].clone()
-            label = batch["labels"][i].clone()
-            pred_label = logits.argmax(dim=-1)
+        # for i in range(batch_size):
+        #     # clone because of
+        #     # https://github.com/pytorch/pytorch/issues/1995
+        #     logits = batch["logits"][i].clone()
+        #     label = batch["labels"][i].clone()
+        #     pred_label = logits.argmax(dim=-1)
 
-            output_id = current_id + i
+        #     output_id = current_id + i
 
-            output = {
-                "pred_label": pred_label,
-                "label": label,
-            }
+        #     output = {
+        #         "pred_label": pred_label,
+        #         "label": label,
+        #     }
 
-            if self.save_path is not None:
-                # you can use safetensors or other lib here
-                torch.save(output, self.save_path / part / f"output_{output_id}.pth")
+        #     if self.save_path is not None:
+        #         # you can use safetensors or other lib here
+        #         torch.save(output, self.save_path / part / f"output_{output_id}.pth")
 
-        return batch
+        # return batch
 
     def _inference_part(self, part, dataloader):
         """
