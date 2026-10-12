@@ -21,12 +21,10 @@ class MtpCrossEntropyLoss(nn.Module):
         out, tot = {}, 0.0
         head_weights = self.head_weights if self.head_weights is not None else [1.0] * n
 
-        logits = mtp_logits / self.temperature
+        logits = mtp_logits / self.temperature if self.temperature != 1.0 else mtp_logits
         for i in range(n):
-            logits_i = logits[:, i] # [B, L, V]
-            logits_i = logits_i.reshape(-1, V) # [B*L, V]
-            targets_i = target[:, i] # [B, L]
-            targets_i = targets_i.reshape(-1) # [B*L]
+            logits_i = logits[:, i].reshape(-1, V) # [B*L, V]
+            targets_i = target[:, i].reshape(-1) # [B*L]
             out[f'loss_{i}'] = F.cross_entropy(logits_i, targets_i, ignore_index=self.ignore_class_id, label_smoothing=self.label_smoothing)
             tot += head_weights[i] * out[f'loss_{i}']
         out['loss'] = tot / sum(head_weights)
