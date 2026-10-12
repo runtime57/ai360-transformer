@@ -51,7 +51,9 @@ class TinyStoriesDataset:
         return self.tokens.shape[0]
 
     def _get_train_text(self):
-        return (item["text"] for item in self.stories)
+        # yield batches (lists of str): row-by-row access on a shuffled dataset is slow
+        # and batches let the Rust BPE trainer pre-tokenize in parallel
+        return (batch["text"] for batch in self.stories.iter(batch_size=10_000))
 
     def _prepare(self, part, val_ratio, raw_data_path):
         dataset = load_from_disk(str(raw_data_path))
