@@ -1,5 +1,5 @@
 defaults:
-  - model: gpt
+  - model: gpt_rope
   - writer: wandb
   - metrics: empty
   - datasets: tiny_stories
@@ -24,7 +24,7 @@ trainer:
   epoch_len: null
   device_tensors: [ "seq", "target" ]
   resume_from: null
-  use_amp: False
+  use_amp: True
   amp_dtype: float16
   device: auto
   override: False
