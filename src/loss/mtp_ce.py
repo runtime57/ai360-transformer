@@ -25,7 +25,7 @@ class MtpCrossEntropyLoss(nn.Module):
         for i in range(n):
             logits_i = logits[:, i] # [B, L, V]
             logits_i = logits_i.reshape(-1, V) # [B*L, V]
-            targets_i = target[:, i:] # [B, L]
+            targets_i = target[:, i] # [B, L]
             targets_i = targets_i.reshape(-1) # [B*L]
             out[f'loss_{i}'] = F.cross_entropy(logits_i, targets_i, ignore_index=self.ignore_class_id, label_smoothing=self.label_smoothing)
             tot += head_weights[i] * out[f'loss_{i}']

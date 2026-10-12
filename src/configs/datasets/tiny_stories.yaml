@@ -13,3 +13,4 @@ val:
   val_ratio: 0.01
   tokenization_workers: 8
   transforms: ${instance_transforms.inference}
+  n_future_tokens: ${n_future_tokens}
