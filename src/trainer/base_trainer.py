@@ -1,5 +1,7 @@
 from abc import abstractmethod
 from contextlib import nullcontext
+from itertools import islice
+from time import perf_counter
 
 import torch
 from numpy import inf
@@ -7,6 +9,7 @@ from torch.nn.utils import clip_grad_norm_
 from tqdm.auto import tqdm
 
 from src.datasets.data_utils import inf_loop
+from src.logger.history import ScalarHistory
 from src.metrics.tracker import MetricTracker
 from src.utils.io_utils import ROOT_PATH
 
@@ -88,6 +91,9 @@ class BaseTrainer:
         self.evaluation_dataloaders = {
             k: v for k, v in dataloaders.items() if k != "train"
         }
+        self.evaluation_epoch_len = self.cfg_trainer.get("evaluation_epoch_len")
+        if self.evaluation_epoch_len is not None and self.evaluation_epoch_len <= 0:
+            raise ValueError("evaluation_epoch_len must be positive or None")
 
         # define epochs
         self._last_epoch = 0  # required for saving on interruption
@@ -125,11 +131,27 @@ class BaseTrainer:
             "grad_norm",
             *[m.name for m in self.metrics["train"]],
             writer=self.writer,
+            empty_values={"grad_norm": float("nan")},
+            transforms={
+                m.name: m.aggregate
+                for m in self.metrics["train"]
+                if hasattr(m, "aggregate")
+            },
         )
         self.evaluation_metrics = MetricTracker(
             *self.config.writer.loss_names,
             *[m.name for m in self.metrics["inference"]],
             writer=self.writer,
+            transforms={
+                m.name: m.aggregate
+                for m in self.metrics["inference"]
+                if hasattr(m, "aggregate")
+            },
+        )
+        self.epoch_train_metrics = MetricTracker(
+            *self.train_metrics.keys(),
+            transforms=self.train_metrics.transforms,
+            empty_values=self.train_metrics.empty_values,
         )
 
         # define checkpoint dir and init everything if required
@@ -137,6 +159,11 @@ class BaseTrainer:
         self.checkpoint_dir = (
             ROOT_PATH / config.trainer.save_dir / config.writer.run_name
         )
+        self.history = ScalarHistory(
+            self.checkpoint_dir / "metrics.csv",
+            [*self.train_metrics.keys(), *self.evaluation_metrics.keys()],
+        )
+        self._history_started_at = None
 
         if config.trainer.get("resume_from") is not None:
             resume_path = self.checkpoint_dir / config.trainer.resume_from
@@ -185,6 +212,7 @@ class BaseTrainer:
         and monitoring the performance improvement (for early stopping
         and saving the best checkpoint).
         """
+        self._history_started_at = perf_counter()
         not_improved_count = 0
         for epoch in range(self.start_epoch, self.epochs + 1):
             self._last_epoch = epoch
@@ -224,6 +252,10 @@ class BaseTrainer:
         self.is_train = True
         self.model.train()
         self.train_metrics.reset()
+        self.epoch_train_metrics.reset()
+        amp_skipped_steps = 0
+        if self._history_started_at is None:
+            self._history_started_at = perf_counter()
         self.writer.set_step((epoch - 1) * self.epoch_len)
         self.writer.add_scalar("epoch", epoch)
         for batch_idx, batch in enumerate(
@@ -242,29 +274,36 @@ class BaseTrainer:
                 else:
                     raise e
 
-            self.train_metrics.update("grad_norm", self._get_grad_norm())
+            if batch.get("optimizer_updated", True):
+                self.train_metrics.update("grad_norm", self._get_grad_norm())
+            else:
+                amp_skipped_steps += 1
 
             # log current results
-            if batch_idx % self.log_step == 0:
-                self.writer.set_step((epoch - 1) * self.epoch_len + batch_idx)
+            if (batch_idx + 1) % self.log_step == 0 or batch_idx + 1 == self.epoch_len:
+                step = (epoch - 1) * self.epoch_len + batch_idx + 1
+                self.writer.set_step(step)
                 self.logger.debug(
                     "Train Epoch: {} {} Loss: {:.6f}".format(
                         epoch, self._progress(batch_idx), batch["loss"].item()
                     )
                 )
                 self.writer.add_scalar(
-                    "learning rate", self.lr_scheduler.get_last_lr()[0]
+                    "learning rate", self.optimizer.param_groups[0]["lr"]
                 )
                 self._log_scalars(self.train_metrics)
                 self._log_batch(batch_idx, batch)
-                # we don't want to reset train metrics at the start of every epoch
-                # because we are interested in recent train metrics
-                last_train_metrics = self.train_metrics.result()
+                self._record_history(epoch, step, "train", "window", self.train_metrics)
+                self.epoch_train_metrics.merge(self.train_metrics)
                 self.train_metrics.reset()
             if batch_idx + 1 >= self.epoch_len:
                 break
 
-        logs = last_train_metrics
+        self.epoch_train_metrics.merge(self.train_metrics)
+        logs = self.epoch_train_metrics.result()
+        logs["amp_skipped_steps"] = amp_skipped_steps
+        self.writer.add_scalar("amp_skipped_steps", amp_skipped_steps)
+        self._record_history(epoch, epoch * self.epoch_len, "train", "epoch", self.epoch_train_metrics)
 
         # Run val/test
         for part, dataloader in self.evaluation_dataloaders.items():
@@ -287,11 +326,14 @@ class BaseTrainer:
         self.is_train = False
         self.model.eval()
         self.evaluation_metrics.reset()
+        total = len(dataloader)
+        if self.evaluation_epoch_len is not None:
+            total = min(total, self.evaluation_epoch_len)
         with torch.no_grad():
             for batch_idx, batch in tqdm(
-                enumerate(dataloader),
+                enumerate(islice(dataloader, total)),
                 desc=part,
-                total=len(dataloader),
+                total=total,
             ):
                 batch = self.process_batch(
                     batch,
@@ -303,7 +345,21 @@ class BaseTrainer:
                 batch_idx, batch, part
             )  # log only the last batch during inference
 
+        self._record_history(
+            epoch, epoch * self.epoch_len, part, "epoch", self.evaluation_metrics
+        )
         return self.evaluation_metrics.result()
+
+    def _record_history(self, epoch, step, split, scope, metrics):
+        self.history.write(
+            epoch=epoch,
+            step=step,
+            split=split,
+            scope=scope,
+            elapsed_seconds=perf_counter() - self._history_started_at,
+            learning_rate=self.optimizer.param_groups[0]["lr"],
+            metrics=metrics.result(),
+        )
 
     def _monitor_performance(self, logs, not_improved_count):
         """
@@ -410,7 +466,8 @@ class BaseTrainer:
     @torch.no_grad()
     def _get_grad_norm(self, norm_type=2):
         """
-        Calculates the gradient norm for logging.
+        Calculates the unscaled gradient norm after optional clipping.
+        Only successful optimizer steps contribute to the logged average.
 
         Args:
             norm_type (float | str | None): the order of the norm.
@@ -421,6 +478,8 @@ class BaseTrainer:
         if isinstance(parameters, torch.Tensor):
             parameters = [parameters]
         parameters = [p for p in parameters if p.grad is not None]
+        if not parameters:
+            return 0.0
         total_norm = torch.norm(
             torch.stack([torch.norm(p.grad.detach(), norm_type) for p in parameters]),
             norm_type,

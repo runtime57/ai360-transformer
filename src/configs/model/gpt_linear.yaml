@@ -1,0 +1,6 @@
+defaults:
+  - gpt
+  - _self_
+
+decoder:
+  attention_type: linear

@@ -1,0 +1,10 @@
+defaults:
+  - train_tiny_stories
+  - override /metrics: language_model
+  - _self_
+
+trainer:
+  skip_oom: False
+
+writer:
+  run_name: tiny_stories_${model.decoder.attention_type}_rope${model.decoder.use_rope}_seed${trainer.seed}

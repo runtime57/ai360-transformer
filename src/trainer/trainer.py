@@ -57,12 +57,21 @@ class Trainer(BaseTrainer):
                 self.optimizer.step()
             if self.lr_scheduler is not None and optimizer_updated:
                 self.lr_scheduler.step()
+            # GradScaler leaves nonfinite gradients on a skipped AMP step.
+            # Expose the outcome so diagnostics do not average those gradients.
+            batch["optimizer_updated"] = optimizer_updated
 
         for loss_name in self.config.writer.loss_names:
-            metrics.update(loss_name, batch[loss_name].item())
+            weight = 1
+            if "target" in batch and hasattr(self.criterion, "ignore_class_id"):
+                weight = (batch["target"] != self.criterion.ignore_class_id).sum().item()
+            if weight:
+                metrics.update_avg(loss_name, batch[loss_name].item(), n=weight)
 
         for met in metric_funcs:
-            metrics.update(met.name, met(**batch))
+            weight = met.weight(**batch) if hasattr(met, "weight") else 1
+            if weight:
+                metrics.update_avg(met.name, met(**batch), n=weight)
         return batch
 
     def _log_batch(self, batch_idx, batch, mode="train"):

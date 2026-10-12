@@ -45,6 +45,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+tests/
 
 # Translations
 *.mo
@@ -96,6 +97,7 @@ ENV/
 
 # mkdocs documentation
 /site
+/docs
 
 # mypy
 .mypy_cache/
@@ -107,6 +109,7 @@ saved/
 wandb/
 .cometml-runs/
 outputs/
+multirun/
 
 # editor, os cache directory
 .vscode/

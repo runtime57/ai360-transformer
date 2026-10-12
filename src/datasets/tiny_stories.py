@@ -20,6 +20,7 @@ class TinyStoriesDataset:
         tokenizer=None,
         tokenization_workers=4,
         transforms=None,
+        limit_stories=None,
     ):
         assert part in ['train', 'val', 'test']
 
@@ -41,6 +42,10 @@ class TinyStoriesDataset:
 
         self.tokenization_workers = tokenization_workers
         self.stories = self._prepare(part, val_ratio, raw_data_path)
+        if limit_stories is not None:
+            if limit_stories <= 0:
+                raise ValueError("limit_stories must be positive or None")
+            self.stories = self.stories.select(range(min(limit_stories, len(self.stories))))
 
         if tokenizer is not None:
             self._set_tokenizer(tokenizer)
@@ -85,12 +90,13 @@ class TinyStoriesDataset:
 
     def _set_tokenizer(self, tokenizer):
         self.tokenizer = tokenizer
+        workers = min(self.tokenization_workers, len(self.stories))
 
         tokenized = self.stories.map(
             self.tokenize_stories,
             batched=True,
             batch_size=1000,
-            num_proc=min(self.tokenization_workers, len(self.stories)),
+            num_proc=workers if workers > 1 else None,
             fn_kwargs={"tokenizer": tokenizer},
             remove_columns=self.stories.column_names,
             desc=f"Tokenizing {self.part}",

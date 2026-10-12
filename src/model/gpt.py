@@ -18,13 +18,17 @@ class TransformerDecoder(nn.Module):
         max_seq_len=None,
         use_rope=False,
         use_only_rope=True,
-        rope_base=10000.0
+        rope_base=10000.0,
+        attention_type="softmax",
+        linear_chunk_size=64,
+        linear_eps=1e-6,
     ):
         super().__init__()
 
         self.vocab_size = vocab_size
         self.d_model = d_model
         self.use_only_rope = use_rope & use_only_rope
+        self.attention_type = attention_type
 
         self.token_embedding = nn.Embedding(vocab_size, d_model)
 
@@ -45,7 +49,10 @@ class TransformerDecoder(nn.Module):
                 attn_dropout=attn_dropout,
                 use_rope=use_rope,
                 rope_base=rope_base,
-                max_seq_len=max_seq_len
+                max_seq_len=max_seq_len,
+                attention_type=attention_type,
+                linear_chunk_size=linear_chunk_size,
+                linear_eps=linear_eps,
             ) for _ in range(num_layers)
         ])
 

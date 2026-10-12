@@ -1,0 +1,6 @@
+defaults:
+  - gpt_linear
+  - _self_
+
+decoder:
+  use_rope: True

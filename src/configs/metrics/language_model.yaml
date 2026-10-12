@@ -1,0 +1,7 @@
+train:
+  - _target_: src.metrics.Perplexity
+  - _target_: src.metrics.TokenAccuracy
+inference:
+  - _target_: src.metrics.TokenNLL
+  - _target_: src.metrics.Perplexity
+  - _target_: src.metrics.TokenAccuracy
