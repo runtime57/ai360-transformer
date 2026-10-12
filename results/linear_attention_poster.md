@@ -13,7 +13,7 @@ The two attention variants use different similarity functions:
 $$
 \begin{aligned}
 s_{\mathrm{softmax}}(q,k)
-&=\exp\!\left(\frac{q^\top k}{\sqrt d}\right),\\
+&=\exp\left(\frac{q^\top k}{\sqrt d}\right),\\
 s_{\mathrm{linear}}(q,k)
 &=\phi(q)^\top\phi(k),
 \qquad \phi(x)=\mathrm{ELU}(x)+1.
@@ -36,7 +36,7 @@ $$
 \boxed{
 y_t=
 \frac{S_t\phi(q_t)}
-{\max\!\left(\phi(q_t)^\top z_t,\varepsilon\right)}
+{\max\left(\phi(q_t)^\top z_t,\varepsilon\right)}
 }
 $$
 
@@ -77,7 +77,7 @@ where $R_t$ is the RoPE rotation matrix at position $t$. Then
 $$
 y_t^{\mathrm{RoPE}}=
 \frac{\sum_{j\le t}(\tilde q_t^\top\tilde k_j)\,v_j}
-{\max\!\left(\phi(q_t)^\top\sum_{j\le t}\phi(k_j),\varepsilon\right)}.
+{\max\left(\phi(q_t)^\top\sum_{j\le t}\phi(k_j),\varepsilon\right)}.
 $$
 
 ## 5. Сonclusion
