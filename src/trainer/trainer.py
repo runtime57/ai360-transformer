@@ -35,7 +35,7 @@ class Trainer(BaseTrainer):
             self.optimizer.zero_grad()
 
         with self._autocast_context():
-            outputs = self.model(**batch)
+            outputs = self.model(training = self.is_train, **batch)
             batch.update(outputs)
 
             all_losses = self.criterion(**batch)

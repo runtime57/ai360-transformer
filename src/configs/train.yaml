@@ -1,6 +1,6 @@
 defaults:
   - model: gpt
-  - writer: disabled_wandb
+  - writer: wandb # disabled_wandb
   - metrics: empty
   - datasets: tiny_shakespeare
   - dataloader: main

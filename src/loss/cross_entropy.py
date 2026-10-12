@@ -13,7 +13,7 @@ class CrossEntropyLoss(nn.Module):
         self.ignore_class_id = ignore_class_id
 
 
-    def forward(self, logits, target, **batch):
+    def forward(self, logits, prefix_logits = None, target = None, **batch):
         # logits: [B, L, N]
         # target: [B, L]
 
@@ -24,5 +24,11 @@ class CrossEntropyLoss(nn.Module):
         target_flat = target.view(-1)
 
         loss = F.cross_entropy(logits_flat, target_flat, ignore_index=self.ignore_class_id, label_smoothing=self.label_smoothing)
+
+        if prefix_logits is not None:
+            prefix_logits = prefix_logits / self.temperature
+            prefix_logits_flat = prefix_logits.view(B * L, -1)
+
+            loss += F.cross_entropy(prefix_logits_flat, target_flat, ignore_index=self.ignore_class_id, label_smoothing=self.label_smoothing)
 
         return {'loss': loss}

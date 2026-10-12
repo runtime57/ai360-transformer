@@ -77,10 +77,7 @@ class TransformerDecoder(nn.Module):
         self.token_embedding = nn.Embedding(vocab_size, self.d_model).to(self.token_embedding.weight.device)
         self._init_weights(self.token_embedding)
 
-
-    def forward(self, seq, **batch):
-        # seq: [B, L] (already tokenized)
-
+    def forward(self, seq, training = False, **batch):
         B, L = seq.shape
         device = seq.device
 
@@ -108,9 +105,13 @@ class TransformerDecoder(nn.Module):
 
         embeds = self.final_norm(seq)
         logits = embeds @ self.token_embedding.weight.T
-
-        return logits
-
+        
+        if training and L > 1:
+            stop_idx = torch.randint(1, L + 1, (1,)).item()
+            prefix_logits = logits[:, :stop_idx, :]
+            return {"logits" : logits, "prefix_logits" : prefix_logits}
+        
+        return { "logits" : logits }
 
 class GPT(nn.Module):
     def __init__(self, decoder, tokenizer=None, beam_width=1, beam_temperature=1.0, use_prob_sampling=False, context_len=512, max_new_tokens=1024):
@@ -132,10 +133,10 @@ class GPT(nn.Module):
             self.decoder._set_context(**context)
 
 
-    def forward(self, seq, **batch):
+    def forward(self, seq, training = False, **batch):
         # seq: [B, L] (already tokenized)
 
-        return {'logits': self.decoder(seq, **batch)}
+        return self.decoder(seq, training=training, **batch)
 
     @torch.no_grad()
     def predict(self, seq, **batch):
