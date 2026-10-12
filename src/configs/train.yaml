@@ -7,9 +7,9 @@ defaults:
   - batch_transforms: empty
   - instance_transforms: empty
   - tokenizer: bpe_shakespeare
-  - optimizer: adam
+  - optimizer: adam5
   - lr_scheduler: warmup_cosine
-  - loss: cross_entropy
+  - loss: telescopic_loss
   - _self_
 
 trainer:
@@ -21,7 +21,7 @@ trainer:
   use_amp: False
   amp_dtype: float16
   device: auto
-  override: False
+  override: True
   monitor: "min val_loss"
   save_period: 2
   early_stop: ${trainer.epochs}

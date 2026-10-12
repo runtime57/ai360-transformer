@@ -1,1 +1,1 @@
-from src.metrics.example import ExampleMetric
+from src.metrics.telescopic_metric import telescopic_metric

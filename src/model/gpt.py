@@ -96,6 +96,7 @@ class TransformerDecoder(nn.Module):
                 torch.cos(angles),
             )
 
+        seq0 = seq
         seq = self.d_model**0.5 * self.token_embedding(seq)
         seq = seq + pos_embed
         seq = self.seq_dropout(seq)
@@ -106,9 +107,20 @@ class TransformerDecoder(nn.Module):
         embeds = self.final_norm(seq)
         logits = embeds @ self.token_embedding.weight.T
         
-        if training and L > 1:
-            stop_idx = torch.randint(1, L + 1, (1,)).item()
-            prefix_logits = logits[:, :stop_idx, :]
+        if training and len(self.transformer_blocks):
+            stop_idx = torch.randint(1, len(self.transformer_blocks), (1,)).item()
+            seq = self.d_model**0.5 * self.token_embedding(seq0)
+            seq = seq + pos_embed
+            seq = self.seq_dropout(seq)
+    
+            for block in self.transformer_blocks:
+                seq = block(seq)
+                stop_idx-=1
+                if stop_idx == 0:
+                    break
+    
+            embeds = self.final_norm(seq)
+            prefix_logits = embeds @ self.token_embedding.weight.T
             return {"logits" : logits, "prefix_logits" : prefix_logits}
         
         return { "logits" : logits }

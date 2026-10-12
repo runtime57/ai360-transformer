@@ -2,7 +2,7 @@ import torch.nn.functional as F
 import torch.nn as nn
 
 
-class CrossEntropyLoss(nn.Module):
+class telescopic_loss(nn.Module):
     def __init__(self, temperature=1.0, label_smoothing=0.0, ignore_class_id=0):
         super().__init__()
         self.ignore_class_id = ignore_class_id
