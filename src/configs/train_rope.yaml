@@ -1,6 +1,6 @@
 defaults:
   - model: gpt_rope
-  - writer: disabled_wandb
+  - writer: wandb
   - metrics: empty
   - datasets: tiny_stories
   - dataloader: main
@@ -9,7 +9,7 @@ defaults:
   - tokenizer: bpe_tiny_stories
   - optimizer: adam
   - lr_scheduler: warmup_cosine
-  - loss: cross_entropy
+  - loss: telescopic_loss
   - _self_
 
 trainer:
