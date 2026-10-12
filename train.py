@@ -1,5 +1,6 @@
 import sys
 import warnings
+from contextlib import nullcontext
 
 import hydra
 import torch
@@ -46,8 +47,8 @@ def main(config):
     set_random_seed(config.trainer.seed)
     device = resolve_training_device(config.trainer.device)
 
-    project_config = OmegaConf.to_container(config)
     logger = setup_saving_and_logging(config)
+    project_config = OmegaConf.to_container(config, resolve=True)
     logger.info("Python executable: %s | PyTorch: %s", sys.executable, torch.__version__)
     device_name = torch.cuda.get_device_name(device) if device.type == "cuda" else str(device)
     logger.info(
@@ -62,60 +63,64 @@ def main(config):
         )
     writer = instantiate(config.writer, logger, project_config)
 
-    tokenizer_config = config.get("tokenizer")
-    dataloaders, batch_transforms, context, tokenizer = get_dataloaders(config, device, tokenizer_config, logger)
-    train_context = context.get("train")
+    # Hydra multirun reuses this process: finish each variant's tracking run,
+    # including when dataset preparation or training raises an exception.
+    writer_context = writer if hasattr(writer, "__enter__") else nullcontext(writer)
+    with writer_context:
+        tokenizer_config = config.get("tokenizer")
+        dataloaders, batch_transforms, context, tokenizer = get_dataloaders(config, device, tokenizer_config, logger)
+        train_context = context.get("train")
 
-    model = instantiate(config.model).to(device)
-    set_context(model, train_context)
+        model = instantiate(config.model).to(device)
+        set_context(model, train_context)
 
-    if tokenizer is not None and hasattr(model, "_set_tokenizer"):
-        model._set_tokenizer(tokenizer)
+        if tokenizer is not None and hasattr(model, "_set_tokenizer"):
+            model._set_tokenizer(tokenizer)
 
-    logger.info(model)
+        logger.info(model)
 
-    loss = instantiate(config.loss).to(device)
-    set_context(loss, train_context)
+        loss = instantiate(config.loss).to(device)
+        set_context(loss, train_context)
 
-    metrics = instantiate(config.metrics)
-    for metric_funcs in (metrics["train"], metrics["inference"]):
-        for metric in metric_funcs:
-            set_context(metric, train_context)
+        metrics = instantiate(config.metrics)
+        for metric_funcs in (metrics["train"], metrics["inference"]):
+            for metric in metric_funcs:
+                set_context(metric, train_context)
 
-    trainable_params = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = instantiate(config.optimizer, params=trainable_params)
+        trainable_params = filter(lambda p: p.requires_grad, model.parameters())
+        optimizer = instantiate(config.optimizer, params=trainable_params)
 
-    epoch_len = config.trainer.get("epoch_len")
-    real_epoch_len = epoch_len if epoch_len is not None else len(dataloaders['train'])
-    total_steps = config.trainer.epochs * real_epoch_len
-    logger.info(
-        "Training budget: %s batches/epoch x %s epochs = %s batches; full corpus pass: %s batches",
-        real_epoch_len, config.trainer.epochs, total_steps, len(dataloaders["train"]),
-    )
+        epoch_len = config.trainer.get("epoch_len")
+        real_epoch_len = epoch_len if epoch_len is not None else len(dataloaders['train'])
+        total_steps = config.trainer.epochs * real_epoch_len
+        logger.info(
+            "Training budget: %s batches/epoch x %s epochs = %s batches; full corpus pass: %s batches",
+            real_epoch_len, config.trainer.epochs, total_steps, len(dataloaders["train"]),
+        )
 
-    if config.get("lr_scheduler") is not None:
-        config.lr_scheduler['steps'] = total_steps
-        lr_scheduler = instantiate(config.lr_scheduler, optimizer=optimizer)
-    else:
-        lr_scheduler = None
+        if config.get("lr_scheduler") is not None:
+            config.lr_scheduler['steps'] = total_steps
+            lr_scheduler = instantiate(config.lr_scheduler, optimizer=optimizer)
+        else:
+            lr_scheduler = None
 
-    trainer = Trainer(
-        model=model,
-        criterion=loss,
-        metrics=metrics,
-        optimizer=optimizer,
-        lr_scheduler=lr_scheduler,
-        config=config,
-        device=device,
-        dataloaders=dataloaders,
-        epoch_len=epoch_len,
-        logger=logger,
-        writer=writer,
-        batch_transforms=batch_transforms,
-        skip_oom=config.trainer.get("skip_oom", True),
-    )
+        trainer = Trainer(
+            model=model,
+            criterion=loss,
+            metrics=metrics,
+            optimizer=optimizer,
+            lr_scheduler=lr_scheduler,
+            config=config,
+            device=device,
+            dataloaders=dataloaders,
+            epoch_len=epoch_len,
+            logger=logger,
+            writer=writer,
+            batch_transforms=batch_transforms,
+            skip_oom=config.trainer.get("skip_oom", True),
+        )
 
-    trainer.train()
+        trainer.train()
 
 
 if __name__ == "__main__":

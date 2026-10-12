@@ -1,4 +1,4 @@
-from datetime import datetime
+from time import perf_counter
 
 import numpy as np
 import pandas as pd
@@ -39,22 +39,30 @@ class WandBWriter:
                 offline, log locally.
         """
         self.disable = disable
+        self.run = None
+        self._closed = False
 
         if not self.disable:
             try:
                 import wandb
 
-                wandb.login()
+                if mode == "online":
+                    wandb.login()
 
                 self.run_id = run_id
 
-                wandb.init(
+                self.run = wandb.init(
                     project=project_name,
                     entity=entity,
                     config=project_config,
                     name=run_name,
-                    resume="allow",  # resume the run if run_id existed
+                    resume=(
+                        "allow"
+                        if project_config.get("trainer", {}).get("resume_from") is not None
+                        else None
+                    ),
                     id=self.run_id,
+                    reinit="finish_previous",
                     mode=mode,
                     save_code=kwargs.get("save_code", False),
                 )
@@ -62,10 +70,24 @@ class WandBWriter:
 
             except ImportError:
                 logger.warning("For use wandb install it via \n\t pip install wandb")
+                self.disable = True
 
         self.step = 0
         self.mode = ""
-        self.timer = datetime.now()
+        self.timer = perf_counter()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close(exit_code=0 if exc_type is None else 1)
+
+    def close(self, exit_code=0):
+        """Flush pending metrics and finish this writer's run once."""
+        if not self._closed:
+            if self.run is not None:
+                self.run.finish(exit_code=exit_code)
+            self._closed = True
 
     def set_step(self, step, mode="train"):
         """
@@ -82,17 +104,17 @@ class WandBWriter:
         if self.disable:
             return
 
+        previous_mode = self.mode
         self.mode = mode
         previous_step = self.step
         self.step = step
-        if step == 0:
-            self.timer = datetime.now()
-        else:
-            duration = datetime.now() - self.timer
+        now = perf_counter()
+        duration = now - self.timer
+        if mode == previous_mode and step > previous_step and duration > 0:
             self.add_scalar(
-                "steps_per_sec", (self.step - previous_step) / duration.total_seconds()
+                "steps_per_sec", (self.step - previous_step) / duration
             )
-            self.timer = datetime.now()
+        self.timer = now
 
     def _object_name(self, object_name):
         """
@@ -121,7 +143,7 @@ class WandBWriter:
         if self.disable:
             return
 
-        self.wandb.save(checkpoint_path, base_path=save_dir)
+        self.run.save(checkpoint_path, base_path=save_dir)
 
     def add_scalar(self, scalar_name, scalar):
         """
@@ -134,7 +156,7 @@ class WandBWriter:
         if self.disable:
             return
 
-        self.wandb.log(
+        self.run.log(
             {
                 self._object_name(scalar_name): scalar,
             },
@@ -151,7 +173,7 @@ class WandBWriter:
         if self.disable:
             return
 
-        self.wandb.log(
+        self.run.log(
             {
                 self._object_name(scalar_name): scalar
                 for scalar_name, scalar in scalars.items()
@@ -171,7 +193,7 @@ class WandBWriter:
         if self.disable:
             return
 
-        self.wandb.log(
+        self.run.log(
             {self._object_name(image_name): self.wandb.Image(image)}, step=self.step
         )
 
@@ -188,7 +210,7 @@ class WandBWriter:
             return
 
         audio = audio.detach().cpu().numpy().T
-        self.wandb.log(
+        self.run.log(
             {
                 self._object_name(audio_name): self.wandb.Audio(
                     audio, sample_rate=sample_rate
@@ -208,7 +230,7 @@ class WandBWriter:
         if self.disable:
             return
 
-        self.wandb.log(
+        self.run.log(
             {self._object_name(text_name): self.wandb.Html(text)}, step=self.step
         )
 
@@ -232,7 +254,7 @@ class WandBWriter:
 
         hist = self.wandb.Histogram(np_histogram=np_hist)
 
-        self.wandb.log({self._object_name(hist_name): hist}, step=self.step)
+        self.run.log({self._object_name(hist_name): hist}, step=self.step)
 
     def add_table(self, table_name, table: pd.DataFrame):
         """
@@ -245,7 +267,7 @@ class WandBWriter:
         if self.disable:
             return
 
-        self.wandb.log(
+        self.run.log(
             {self._object_name(table_name): self.wandb.Table(dataframe=table)},
             step=self.step,
         )
