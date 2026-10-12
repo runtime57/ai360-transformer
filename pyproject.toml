@@ -3,6 +3,8 @@ name = "ai360-transformer"
 version = "0.1.0"
 requires-python = ">=3.13,<3.14"
 dependencies = [
+    "comet-ml==3.58.7",
+    "datasets==5.1.0",
     "hydra-core==1.3.7",
     "implicit==0.7.3",
     "ipykernel==7.4.0",
@@ -12,14 +14,23 @@ dependencies = [
     "pandas==3.0.6",
     "pillow==12.3.0",
     "polars==2.0.0",
+    "pyarrow==26.0.0",
+    "requests==2.34.2",
     "scipy==1.18.1",
     "tensorboard==2.21.0",
+    "tokenizers==0.23.2",
     "torch==2.14.1",
+    "torchmetrics==1.9.0",
     "torchvision==0.29.1",
     "tqdm==4.70.1",
     "wandb==0.29.0",
-    "tokenizers==0.23.2",
-    "datasets==5.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "black==26.10.0",
+    "isort==9.0.2",
+    "pre-commit==4.6.2",
 ]
 
 [tool.uv]
