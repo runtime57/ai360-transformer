@@ -1,5 +1,6 @@
 import torch.nn.functional as F
 import torch.nn as nn
+from torch.utils.checkpoint import checkpoint
 
 
 class MtpCrossEntropyLoss(nn.Module):
@@ -13,6 +14,14 @@ class MtpCrossEntropyLoss(nn.Module):
     def _set_context(self, ignore_class_id, **context):
         self.ignore_class_id = ignore_class_id
 
+    def one_head(self, logits, target, i):
+        # slicing happens inside the checkpoint: only the (already existing) full logits tensor
+        # is kept for backward, not a per-head copy or the fp32 log-softmax
+        V = logits.shape[-1]
+        logits_i = logits[:, i].reshape(-1, V) # [B*L, V]
+        targets_i = target[:, i].reshape(-1) # [B*L]
+        return F.cross_entropy(logits_i, targets_i, ignore_index=self.ignore_class_id, label_smoothing=self.label_smoothing)
+
     def forward(self, mtp_logits, target, **batch):
         # logits: [B, N, L, V]
         # target: [B, N, L]
@@ -23,9 +32,7 @@ class MtpCrossEntropyLoss(nn.Module):
 
         logits = mtp_logits / self.temperature if self.temperature != 1.0 else mtp_logits
         for i in range(n):
-            logits_i = logits[:, i].reshape(-1, V) # [B*L, V]
-            targets_i = target[:, i].reshape(-1) # [B*L]
-            out[f'loss_{i}'] = F.cross_entropy(logits_i, targets_i, ignore_index=self.ignore_class_id, label_smoothing=self.label_smoothing)
+            out[f'loss_{i}'] = checkpoint(self.one_head, logits, target, i, use_reentrant=False)
             tot += head_weights[i] * out[f'loss_{i}']
         out['loss'] = tot / sum(head_weights)
         return out

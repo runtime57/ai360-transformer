@@ -7,7 +7,7 @@ decoder:
   num_heads: 8
   seq_dropout: 0.1
   ffn_dropout: 0.1
-  attn_dropout: 0.1
+  attn_dropout: 0.0
   use_trainable_pos_embeds: False
   max_seq_len: ${max_seq_len}
   n_future_tokens: ${n_future_tokens}

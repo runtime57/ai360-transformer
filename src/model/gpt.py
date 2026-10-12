@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch
+from torch.utils.checkpoint import checkpoint
 
 from .transformer_utils.transformer_block import TransformerBlock
 
@@ -19,9 +20,13 @@ class TransformerDecoder(nn.Module):
         use_rope=False,
         use_only_rope=True,
         rope_base=10000.0,
-        n_future_tokens=1
+        n_future_tokens=1,
+        grad_checkpointing=False
     ):
         super().__init__()
+
+        # recompute block activations in backward instead of storing them (less memory, ~30% more compute)
+        self.grad_checkpointing = grad_checkpointing
 
         self.vocab_size = vocab_size
         self.d_model = d_model
@@ -112,14 +117,24 @@ class TransformerDecoder(nn.Module):
         seq = self.seq_dropout(seq)
 
         for block in self.transformer_blocks:
-            seq = block(seq)
+            seq = self._maybe_checkpoint(block, seq)
 
         # embeds = self.final_norm(seq)
         # logits = embeds @ self.token_embedding.weight.T
         logits = []
         for headnorm in self.mtps:
-            logits.append(headnorm(seq) @ self.token_embedding.weight.T)
+            logits.append(self._maybe_checkpoint(self._head_logits, headnorm, seq))
         return torch.stack(logits, dim=1)  # [B, N, L, Vocab]
+
+    def _head_logits(self, headnorm, seq):
+        return headnorm(seq) @ self.token_embedding.weight.T
+
+    def _maybe_checkpoint(self, fn, *args):
+        # only stores fn's inputs; everything inside fn is recomputed during backward
+        # (dropout masks are reproduced: checkpoint restores the RNG state)
+        if self.grad_checkpointing and self.training and torch.is_grad_enabled():
+            return checkpoint(fn, *args, use_reentrant=False)
+        return fn(*args)
     
 
 
