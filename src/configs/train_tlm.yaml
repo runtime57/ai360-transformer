@@ -1,6 +1,6 @@
 defaults:
   - model: gpt
-  - writer: disabled_wandb
+  - writer: wandb
   - metrics: empty
   - datasets: tiny_stories
   - dataloader: main
