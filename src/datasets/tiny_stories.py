@@ -4,6 +4,7 @@ import torch
 from tqdm import tqdm
 from datasets import load_dataset, load_from_disk
 
+from src.datasets.base_dataset import BaseDataset
 from src.utils.io_utils import ROOT_PATH
 
 
@@ -17,6 +18,7 @@ class TinyStoriesDataset:
         allow_download=True,
         override=False,
         raw_data_path=None,
+        n_future_tokens=1,
         tokenizer=None,
         tokenization_workers=4,
         transforms=None,
@@ -31,7 +33,7 @@ class TinyStoriesDataset:
         self.max_seq_len = max_seq_len
         self.transforms = transforms
         self.seed = seed
-
+        self.n_future_tokens = n_future_tokens
         if override or not raw_data_path.exists():
             assert allow_download
 
@@ -98,6 +100,8 @@ class TinyStoriesDataset:
 
         token_ids = []
 
+        len_chunk = self.max_seq_len + self.n_future_tokens
+
         for start in tqdm(range(0, len(tokenized), 1000), desc=f"Collecting {self.part}"):
             batch = tokenized[start:start + 1000]
             for story_tokens in batch["input_ids"]:
@@ -105,12 +109,12 @@ class TinyStoriesDataset:
                     token_ids.extend(story_tokens)
                 else:
                     for offset in range(0, len(story_tokens) - 1, self.max_seq_len):
-                        data = torch.as_tensor(story_tokens[offset:offset + self.max_seq_len + 1], dtype=torch.long)
-                        token_ids.append(self._split_by_maxlen(data, self.max_seq_len + 1))
+                        data = torch.as_tensor(story_tokens[offset:offset + len_chunk], dtype=torch.long)
+                        token_ids.append(self._split_by_maxlen(data, len_chunk))
 
         if self.part == "train":
             tokens = torch.as_tensor(token_ids, dtype=torch.long)
-            self.tokens = self._split_by_maxlen(tokens, self.max_seq_len + 1)
+            self.tokens = self._split_by_maxlen(tokens, len_chunk)
         else:
             self.tokens = torch.cat(token_ids, dim=0)
 
@@ -136,7 +140,7 @@ class TinyStoriesDataset:
     def __getitem__(self, idx):
         data = self.tokens[idx]
 
-        seq, target = data[:-1], data[1:]
+        seq, target = data[:self.max_seq_len], data[1:].unfold(0, self.max_seq_len, 1)
 
         instance_data = {"seq": seq, "target": target}
         instance_data = self.preprocess_data(instance_data)

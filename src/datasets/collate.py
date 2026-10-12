@@ -18,6 +18,6 @@ def collate_fn(dataset_items: list[dict]):
 
     keys = dataset_items[0].keys()
     for key in keys:
-        result_batch[key] = torch.vstack([elem[key] for elem in dataset_items])
+        result_batch[key] = torch.stack([elem[key] for elem in dataset_items])
 
     return result_batch

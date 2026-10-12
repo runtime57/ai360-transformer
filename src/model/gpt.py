@@ -18,7 +18,8 @@ class TransformerDecoder(nn.Module):
         max_seq_len=None,
         use_rope=False,
         use_only_rope=True,
-        rope_base=10000.0
+        rope_base=10000.0,
+        n_future_tokens=1
     ):
         super().__init__()
 
@@ -36,20 +37,27 @@ class TransformerDecoder(nn.Module):
 
         self.seq_dropout = nn.Dropout(seq_dropout)
 
+        block = lambda: TransformerBlock(
+            d_model=d_model,
+            mlp_hidden_dim=4 * d_model,
+            num_heads=num_heads,
+            ffn_dropout=ffn_dropout,
+            attn_dropout=attn_dropout,
+            use_rope=use_rope,
+            rope_base=rope_base,
+            max_seq_len=max_seq_len
+        )
         self.transformer_blocks = torch.nn.ModuleList([
-            TransformerBlock(
-                d_model=d_model,
-                mlp_hidden_dim=4 * d_model,
-                num_heads=num_heads,
-                ffn_dropout=ffn_dropout,
-                attn_dropout=attn_dropout,
-                use_rope=use_rope,
-                rope_base=rope_base,
-                max_seq_len=max_seq_len
-            ) for _ in range(num_layers)
+            block() for _ in range(num_layers)
         ])
 
-        self.final_norm = nn.LayerNorm(d_model)
+        self.n_future_tokens = n_future_tokens
+        self.mtps = nn.ModuleList([
+            nn.Sequential(
+                block(),
+                nn.LayerNorm(d_model)
+            ) for _ in range(n_future_tokens)
+        ])
 
         self.apply(self._init_weights)
 
@@ -106,10 +114,13 @@ class TransformerDecoder(nn.Module):
         for block in self.transformer_blocks:
             seq = block(seq)
 
-        embeds = self.final_norm(seq)
-        logits = embeds @ self.token_embedding.weight.T
-
-        return logits
+        # embeds = self.final_norm(seq)
+        # logits = embeds @ self.token_embedding.weight.T
+        logits = []
+        for headnorm in self.mtps:
+            logits.append(headnorm(seq) @ self.token_embedding.weight.T)
+        return torch.stack(logits, dim=1)  # [B, N, L, Vocab]
+    
 
 
 class GPT(nn.Module):
@@ -134,8 +145,8 @@ class GPT(nn.Module):
 
     def forward(self, seq, **batch):
         # seq: [B, L] (already tokenized)
-
-        return {'logits': self.decoder(seq, **batch)}
+        all_logits = self.decoder(seq, **batch)  # [B, N, L, Vocab]
+        return {'logits': all_logits[:, 0], 'mtp_logits': all_logits}
 
     @torch.no_grad()
     def predict(self, seq, **batch):
@@ -153,7 +164,7 @@ class GPT(nn.Module):
                 break
 
             x = beams[:, -self.context_len:]
-            logits = self.decoder(x, **batch)[:, -1, :]
+            logits = self.decoder(x, **batch)[:, 0, -1, :]
             log_probs = torch.log_softmax(logits.float() / self.beam_temperature, dim=-1)
 
             log_probs = log_probs.masked_fill(finished[:, None], float("-inf"))
