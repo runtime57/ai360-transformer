@@ -1,0 +1,116 @@
+model:
+  _target_: src.model.GPT
+  decoder:
+    _target_: src.model.TransformerDecoder
+    d_model: 512
+    vocab_size: 1
+    num_layers: 6
+    num_heads: 8
+    seq_dropout: 0.1
+    ffn_dropout: 0.1
+    attn_dropout: 0.1
+    use_trainable_pos_embeds: false
+    max_seq_len: ${max_seq_len}
+    use_rope: true
+    use_only_rope: true
+    attention_type: softmax
+    linear_chunk_size: 64
+    linear_eps: 1.0e-06
+  beam_width: 8
+  context_len: ${max_seq_len}
+  max_new_tokens: 2048
+writer:
+  _target_: src.logger.WandBWriter
+  project_name: pytorch_template
+  entity: null
+  run_name: tiny_stories_${model.decoder.attention_type}_rope${model.decoder.use_rope}_seed${trainer.seed}
+  mode: online
+  loss_names:
+  - loss
+  log_checkpoints: false
+  id_length: 8
+  disable: true
+  run_id: hyrs08p0
+metrics:
+  train:
+  - _target_: src.metrics.Perplexity
+  - _target_: src.metrics.TokenAccuracy
+  inference:
+  - _target_: src.metrics.TokenNLL
+  - _target_: src.metrics.Perplexity
+  - _target_: src.metrics.TokenAccuracy
+datasets:
+  train:
+    _target_: src.datasets.TinyStoriesDataset
+    part: train
+    max_seq_len: ${max_seq_len}
+    val_ratio: 0.01
+    tokenization_workers: 1
+    transforms: ${instance_transforms.train}
+    limit_stories: 1000000
+  val:
+    _target_: src.datasets.TinyStoriesDataset
+    part: val
+    max_seq_len: ${max_seq_len}
+    val_ratio: 0.01
+    tokenization_workers: 1
+    transforms: ${instance_transforms.inference}
+    limit_stories: 1000
+dataloader:
+  _target_: torch.utils.data.DataLoader
+  batch_size: 8
+  num_workers: 0
+  pin_memory: true
+batch_transforms:
+  train: null
+  inference: null
+instance_transforms:
+  train: null
+  inference: null
+tokenizer:
+  instance:
+    _target_: src.tokenizers.BpeTokenizer
+    vocab_size: 4096
+    min_frequency: 2
+  use_dataset_get_train_text_func: true
+  vocab_path: data/tokenizer/bpe/tiny_stories.json
+  override: false
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 0.0003
+  betas:
+  - 0.9
+  - 0.98
+  eps: 1.0e-09
+  weight_decay: 0.0
+lr_scheduler:
+  _target_: src.schedulers.WarmupCosineScheduler
+  min_lr_ratio: 0
+  min_end_lr_ratio: 0.001
+  warmup_ratio: 0.1
+  steps: null
+loss:
+  _target_: src.loss.CrossEntropyLoss
+  temperature: 1.0
+  label_smoothing: 0.0
+  ignore_class_id: 0
+trainer:
+  log_step: 20
+  epochs: 10
+  epoch_len: 5000
+  device_tensors:
+  - seq
+  - target
+  resume_from: null
+  use_amp: true
+  amp_dtype: float16
+  device: cuda
+  override: false
+  monitor: min val_loss
+  save_period: 1
+  early_stop: ${trainer.epochs}
+  save_dir: saved/attention_large_50k
+  seed: 42
+  skip_oom: false
+  evaluation_epoch_len: 50
+max_seq_len: 512
