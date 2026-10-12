@@ -123,7 +123,7 @@ class TransformerDecoder(nn.Module):
         logits = embeds @ self.token_embedding.weight.T
         
         res["logits"] = logits
-        return { "logits" : logits }
+        return res
 
 class GPT(nn.Module):
     def __init__(self, decoder, tokenizer=None, beam_width=1, beam_temperature=1.0, use_prob_sampling=False, context_len=512, max_new_tokens=1024):
