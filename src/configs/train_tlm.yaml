@@ -22,8 +22,10 @@ trainer:
   log_step: 50
   epochs: 10
   epoch_len: null
-  device_tensors: ["seq", "target"]
+  device_tensors: [ "seq", "target" ]
   resume_from: null
+  use_amp: False
+  amp_dtype: float16
   device: auto
   override: False
   monitor: "min val_loss"
