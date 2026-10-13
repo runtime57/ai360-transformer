@@ -52,14 +52,14 @@ class Inferencer(BaseTrainer):
 
         token_count = (batch["target"] != self.criterion.ignore_class_id).sum().item()
         loss = self.criterion(**batch)
-        for key, value in loss:
+        for key, value in loss.items():
             if isinstance(value, torch.Tensor):
                 value = value.item()
-            metrics.update_avg(key, value.item(), n=token_count)
+            metrics.update_avg(key, value, n=token_count)
 
         for metric in self.metrics:
             metric_result = metric(**batch)
-            for key, value in metric_result:
+            for key, value in metric_result.items():
                 if isinstance(value, torch.Tensor):
                     value = value.item()
                 metrics.update_avg(metric.name, value, n=token_count)
