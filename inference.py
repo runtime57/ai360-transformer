@@ -7,68 +7,58 @@ from hydra.utils import instantiate
 from src.datasets.data_utils import get_dataloaders
 from src.trainer import Inferencer
 from src.utils.init_utils import set_random_seed
-from src.utils.io_utils import ROOT_PATH
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
+def _set_context_if_supported(component, context):
+    if component is not None and hasattr(component, "_set_context"):
+        component._set_context(**context)
+
+
 @hydra.main(version_base=None, config_path="src/configs", config_name="inference")
 def main(config):
-    """
-    Main script for inference. Instantiates the model, metrics, and
-    dataloaders. Runs Inferencer to calculate metrics and (or)
-    save predictions.
-
-    Args:
-        config (DictConfig): hydra experiment config.
-    """
     set_random_seed(config.inferencer.seed)
 
-    tokenizer = None
-    tokenizer_config = config.get("tokenizer")
-    if tokenizer_config is not None:
-        from src.tokenizers import init_tokenizer
-
-        # Inference may load a vocabulary but must never fit one on evaluation data.
-        tokenizer = init_tokenizer(tokenizer_config, allow_build=False)
-
     if config.inferencer.device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = (
+            "cuda" if torch.cuda.is_available() else
+            "mps" if torch.backends.mps.is_available() else
+            "cpu"
+        )
     else:
         device = config.inferencer.device
 
-    # setup data_loader instances
-    # batch_transforms should be put on device
-    dataloaders, batch_transforms = get_dataloaders(config, device, tokenizer)
+    dataloaders, batch_transforms, datasets_context, tokenizer = get_dataloaders(
+        config, device, config.get("tokenizer")
+    )
 
-    # build model architecture, then print to console
     model = instantiate(config.model).to(device)
-    print(model)
+    inference_context = next(iter(datasets_context.values()), None)
+    if inference_context is not None:
+        _set_context_if_supported(model, inference_context)
+    if tokenizer is not None and hasattr(model, "_set_tokenizer"):
+        model._set_tokenizer(tokenizer)
 
-    # get metrics
-    metrics = instantiate(config.metrics)
-
-    # save_path for model predictions
-    save_path = ROOT_PATH / "data" / "saved" / config.inferencer.save_path
-    save_path.mkdir(exist_ok=True, parents=True)
+    criterion = instantiate(config.loss).to(device)
+    metrics = instantiate(config.get("metrics"))
 
     inferencer = Inferencer(
         model=model,
+        criterion=criterion,
         config=config,
         device=device,
         dataloaders=dataloaders,
         batch_transforms=batch_transforms,
-        save_path=save_path,
         metrics=metrics,
         skip_model_load=False,
+        datasets_context=datasets_context,
     )
 
     logs = inferencer.run_inference()
-
-    for part in logs.keys():
-        for key, value in logs[part].items():
-            full_key = part + "_" + key
-            print(f"    {full_key:15s}: {value}")
+    for part, part_logs in logs.items():
+        for key, value in part_logs.items():
+            print(f"    {part + '_' + key:10s}: {value:.4f}")
 
 
 if __name__ == "__main__":

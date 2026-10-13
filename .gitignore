@@ -118,3 +118,8 @@ data/tokenizer/
 # local environment / WSL ROCm setup artifacts
 .rocm-setup/
 scripts/
+work/
+results/
+
+# large local checkpoints
+src/exp-data/*.pth
