@@ -1,26 +1,14 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from torch import Tensor
 
 from .linear_attention import causal_linear_attention
 
 
 class CausalSelfAttention(nn.Module):
-    def __init__(
-        self,
-        d_model: int,
-        num_heads: int,
-        dropout: float = 0.0,
-        use_rope: bool = False,
-        rope_base: float = 10000.0,
-        max_seq_len: int | None = None,
-        use_headwise_gate: bool = False,
-        use_elementwise_gate: bool = False,
-        attention_type: str = "softmax",
-        linear_chunk_size: int = 64,
-        linear_eps: float = 1e-6,
-    ):
+    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.0, use_rope: bool = False, rope_base: float = 10000.0, max_seq_len: int | None = None, use_headwise_gate: bool = False, use_elementwise_gate: bool = False, attention_type: str = "softmax", linear_chunk_size: int = 64, linear_eps: float = 1e-6):
         super().__init__()
         if num_heads <= 0 or d_model <= 0 or d_model % num_heads:
             raise ValueError("d_model must be positive and divisible by num_heads")
@@ -99,6 +87,7 @@ class CausalSelfAttention(nn.Module):
             dim=-1,
         ).flatten(-2)
 
+
     def forward(self, x: Tensor) -> Tensor:
         B, T, D = x.shape
 
@@ -115,9 +104,7 @@ class CausalSelfAttention(nn.Module):
 
         if self.attention_type == "linear":
             y = causal_linear_attention(
-                q,
-                k,
-                v,
+                q, k, v,
                 chunk_size=self.linear_chunk_size,
                 eps=self.linear_eps,
                 dropout_p=self.dropout,
@@ -128,9 +115,7 @@ class CausalSelfAttention(nn.Module):
             if self.use_rope:
                 q, k = self._rotate_queries_and_keys(q, k)
             y = F.scaled_dot_product_attention(
-                q,
-                k,
-                v,
+                q, k, v,
                 attn_mask=None,
                 dropout_p=self.dropout if self.training else 0.0,
                 is_causal=True,
@@ -179,19 +164,7 @@ class TransformerBlock(nn.Module):
     ):
         super().__init__()
         self.norm1 = nn.LayerNorm(d_model)
-        self.attention = CausalSelfAttention(
-            d_model,
-            num_heads,
-            attn_dropout,
-            use_rope,
-            rope_base,
-            max_seq_len,
-            use_headwise_gate,
-            use_elementwise_gate,
-            attention_type=attention_type,
-            linear_chunk_size=linear_chunk_size,
-            linear_eps=linear_eps,
-        )
+        self.attention = CausalSelfAttention(d_model, num_heads, attn_dropout, use_rope, rope_base, max_seq_len, use_headwise_gate, use_elementwise_gate, attention_type=attention_type, linear_chunk_size=linear_chunk_size, linear_eps=linear_eps)
         self.attn_dropout = nn.Dropout(attn_dropout)
 
         self.norm2 = nn.LayerNorm(d_model)

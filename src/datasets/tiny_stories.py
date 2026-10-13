@@ -1,9 +1,9 @@
 from pathlib import Path
-
 import torch
-from tqdm import tqdm
 
+from tqdm import tqdm
 from datasets import load_dataset, load_from_disk
+
 from src.utils.io_utils import ROOT_PATH
 
 
@@ -22,13 +22,11 @@ class TinyStoriesDataset:
         transforms=None,
         limit_stories=None,
     ):
-        assert part in ["train", "val", "test"]
+        assert part in ['train', 'val', 'test']
 
         data_dir = ROOT_PATH / "data" / "tiny_story"
 
-        raw_data_path = (
-            Path(raw_data_path) if raw_data_path is not None else data_dir / "raw"
-        )
+        raw_data_path = Path(raw_data_path) if raw_data_path is not None else data_dir / "raw"
 
         self.part = part
         self.max_seq_len = max_seq_len
@@ -47,9 +45,7 @@ class TinyStoriesDataset:
         if limit_stories is not None:
             if limit_stories <= 0:
                 raise ValueError("limit_stories must be positive or None")
-            self.stories = self.stories.select(
-                range(min(limit_stories, len(self.stories)))
-            )
+            self.stories = self.stories.select(range(min(limit_stories, len(self.stories))))
 
         if tokenizer is not None:
             self._set_tokenizer(tokenizer)
@@ -63,7 +59,7 @@ class TinyStoriesDataset:
     def _prepare(self, part, val_ratio, raw_data_path):
         dataset = load_from_disk(str(raw_data_path))
 
-        if part == "test":
+        if part == 'test':
             return dataset["validation"]
 
         train = dataset["train"].shuffle(seed=self.seed)
@@ -77,9 +73,7 @@ class TinyStoriesDataset:
         pad_len = (-tokens.shape[0]) % max_seq_len
 
         if pad_len > 0:
-            padding = torch.full(
-                (pad_len,), self.pad_id, dtype=tokens.dtype, device=tokens.device
-            )
+            padding = torch.full((pad_len,), self.pad_id, dtype=tokens.dtype, device=tokens.device)
             tokens = torch.cat([tokens, padding])
 
         return tokens.reshape(-1, max_seq_len)
@@ -110,22 +104,15 @@ class TinyStoriesDataset:
 
         token_ids = []
 
-        for start in tqdm(
-            range(0, len(tokenized), 1000), desc=f"Collecting {self.part}"
-        ):
-            batch = tokenized[start : start + 1000]
+        for start in tqdm(range(0, len(tokenized), 1000), desc=f"Collecting {self.part}"):
+            batch = tokenized[start:start + 1000]
             for story_tokens in batch["input_ids"]:
                 if self.part == "train":
                     token_ids.extend(story_tokens)
                 else:
                     for offset in range(0, len(story_tokens) - 1, self.max_seq_len):
-                        data = torch.as_tensor(
-                            story_tokens[offset : offset + self.max_seq_len + 1],
-                            dtype=torch.long,
-                        )
-                        token_ids.append(
-                            self._split_by_maxlen(data, self.max_seq_len + 1)
-                        )
+                        data = torch.as_tensor(story_tokens[offset:offset + self.max_seq_len + 1], dtype=torch.long)
+                        token_ids.append(self._split_by_maxlen(data, self.max_seq_len + 1))
 
         if self.part == "train":
             tokens = torch.as_tensor(token_ids, dtype=torch.long)
@@ -138,7 +125,7 @@ class TinyStoriesDataset:
             "part": self.part,
             "vocab_size": len(self.tokenizer.id_to_token),
             "ignore_class_id": self.pad_id,
-            "max_seq_len": self.max_seq_len,
+            "max_seq_len": self.max_seq_len
         }
 
     @property
@@ -150,6 +137,7 @@ class TinyStoriesDataset:
             for transform in self.transforms:
                 instance_data.update(transform(**instance_data))
         return instance_data
+
 
     def __getitem__(self, idx):
         data = self.tokens[idx]
