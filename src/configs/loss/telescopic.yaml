@@ -1,0 +1,6 @@
+_target_: src.loss.TelescopicLoss
+telescopic_lambda: 1.0
+telescopic_gamma: 1.0
+temperature: 1.0
+label_smoothing: 0.0
+ignore_class_id: 0

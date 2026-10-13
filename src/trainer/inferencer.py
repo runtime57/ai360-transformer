@@ -48,7 +48,7 @@ class Inferencer(BaseTrainer):
     def process_batch(self, batch, metrics):
         batch = self.move_batch_to_device(batch)
         batch = self.transform_batch(batch)
-        batch.update(self.model(**batch))
+        batch.update(self.model(inference=True, **batch))
 
         token_count = (batch["target"] != self.criterion.ignore_class_id).sum().item()
         loss = self.criterion(**batch)
@@ -62,7 +62,9 @@ class Inferencer(BaseTrainer):
             for key, value in metric_result.items():
                 if isinstance(value, torch.Tensor):
                     value = value.item()
-                metrics.update_avg(metric.name, value, n=token_count)
+                # key (not metric.name): a telescopic metric returns one
+                # value per prefix depth (depth_1 .. depth_N)
+                metrics.update_avg(key, value, n=token_count)
 
         return batch
 

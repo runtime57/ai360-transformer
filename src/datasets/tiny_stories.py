@@ -31,6 +31,7 @@ class TinyStoriesDataset:
         tokenizer=None,
         tokenization_workers=4,
         transforms=None,
+        max_stories=None,
     ):
         assert part in ['train', 'val', 'test']
 
@@ -49,6 +50,7 @@ class TinyStoriesDataset:
         self.allow_download = allow_download
         self.override = override
         self.tokenization_workers = min(tokenization_workers, os.cpu_count() or 1)
+        self.max_stories = max_stories
         self._stories = None
 
         if tokenizer is not None:
@@ -115,19 +117,23 @@ class TinyStoriesDataset:
             "model_state": tokenizer._get_model_state(),
             "seed": self.seed,
             "val_ratio": self.val_ratio,
+            "max_stories": self.max_stories,
         }
         key = hashlib.sha1(json.dumps(state, sort_keys=True).encode()).hexdigest()[:12]
         prefix = self.cache_dir / f"{self.part}_{key}"
         return Path(f"{prefix}_tokens.npy"), Path(f"{prefix}_offsets.npy")
 
     def _tokenize_to_stream(self, tokenizer):
-        tokenized = self.stories.map(
+        stories = self.stories
+        if self.max_stories is not None:
+            stories = stories.select(range(min(self.max_stories, len(stories))))
+        tokenized = stories.map(
             self.tokenize_stories,
             batched=True,
             batch_size=1000,
-            num_proc=min(self.tokenization_workers, len(self.stories)),
+            num_proc=min(self.tokenization_workers, len(stories)),
             fn_kwargs={"tokenizer": tokenizer},
-            remove_columns=self.stories.column_names,
+            remove_columns=stories.column_names,
             desc=f"Tokenizing {self.part}",
         )
 

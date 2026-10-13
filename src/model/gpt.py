@@ -1,3 +1,6 @@
+import math
+import random
+
 import torch.nn as nn
 import torch
 from torch.utils.checkpoint import checkpoint
@@ -104,7 +107,7 @@ class TransformerDecoder(nn.Module):
         self._init_weights(self.token_embedding)
 
 
-    def forward(self, seq, **batch):
+    def forward(self, seq, prefix_depth=None, **batch):
         # seq: [B, L] (already tokenized)
 
         B, L = seq.shape
@@ -129,7 +132,12 @@ class TransformerDecoder(nn.Module):
         seq = seq + pos_embed
         seq = self.seq_dropout(seq)
 
-        for block in self.transformer_blocks:
+        if prefix_depth is None:
+            blocks = self.transformer_blocks
+        else:
+            blocks = self.transformer_blocks[:prefix_depth]
+
+        for block in blocks:
             seq = self._maybe_checkpoint(block, seq)
 
         if self.n_future_tokens is None:
@@ -153,7 +161,10 @@ class TransformerDecoder(nn.Module):
 
 
 class GPT(nn.Module):
-    def __init__(self, decoder, tokenizer=None, beam_width=1, beam_temperature=1.0, use_prob_sampling=False, context_len=512, max_new_tokens=1024, top_p=1.0):
+    def __init__(self, decoder, tokenizer=None, beam_width=1, beam_temperature=1.0,
+                 use_prob_sampling=False, context_len=512, max_new_tokens=1024,
+                 top_p=1.0, telescopic=False, telescopic_lambda=1.0,
+                 telescopic_gamma=1.0, predict_prefix_depth=None):
         super().__init__()
 
         self.context_len = context_len
@@ -163,6 +174,10 @@ class GPT(nn.Module):
         self.beam_width = beam_width
         self.beam_temperature = beam_temperature
         self.use_prob_sampling = use_prob_sampling
+        self.telescopic = telescopic
+        self.telescopic_lambda = telescopic_lambda
+        self.telescopic_gamma = telescopic_gamma
+        self.predict_prefix_depth = predict_prefix_depth
         self.top_p = top_p
 
     def _set_tokenizer(self, tokenizer):
@@ -172,15 +187,31 @@ class GPT(nn.Module):
         if hasattr(self.decoder, "_set_context"):
             self.decoder._set_context(**context)
 
+    def forward(self, seq, inference=False, **batch):
+        if inference and self.telescopic:
+            num_blocks = len(self.decoder.transformer_blocks)
+            all_logits = torch.stack(
+                [
+                    self.decoder(seq, prefix_depth=k)
+                    for k in range(1, num_blocks + 1)
+                ]
+            )
+            return {"all_logits": all_logits, "logits": all_logits[-1]}
 
-    def forward(self, seq, **batch):
-        # seq: [B, L] (already tokenized)
         logits = self.decoder(seq, **batch)
-        if self.decoder.n_future_tokens is None:
-            return {'logits': logits}  # [B, L, Vocab]
 
-        # [B, N, L, Vocab]
-        return {'logits': logits[:, 0], 'mtp_logits': logits}
+        if self.decoder.n_future_tokens is None:
+            outputs = {'logits': logits}  # [B, L, Vocab]
+        else:
+            # [B, N, L, Vocab]
+            outputs = {'logits': logits[:, 0], 'mtp_logits': logits}
+
+        if self.telescopic and self.training:
+            prefix_depth = random.randint(1, len(self.decoder.transformer_blocks))
+            outputs['prefix_logits'] = self.decoder(seq, prefix_depth=prefix_depth, **batch)
+            outputs['prefix_depth'] = prefix_depth
+
+        return outputs
 
     @torch.no_grad()
     def predict(self, seq, **batch):
@@ -198,7 +229,7 @@ class GPT(nn.Module):
                 break
 
             x = beams[:, -self.context_len:]
-            logits = self.decoder(x, **batch)
+            logits = self.decoder(x, prefix_depth=self.predict_prefix_depth, **batch)
             logits = logits[:, -1, :] if logits.ndim == 3 else logits[:, 0, -1, :]
             log_probs = torch.log_softmax(logits.float() / self.beam_temperature, dim=-1)
 
