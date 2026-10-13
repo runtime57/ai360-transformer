@@ -1,0 +1,4 @@
+defaults:
+  - train_attention_compare
+  - override /model: gpt_linear
+  - _self_

@@ -1,0 +1,32 @@
+defaults:
+  - train_attention_compare
+  - _self_
+
+trainer:
+  device: auto
+  use_amp: False
+  epochs: 3
+  epoch_len: 200
+  log_step: 20
+  save_period: 1
+  save_dir: saved/attention_quick
+
+model:
+  decoder:
+    d_model: 256
+    num_layers: 4
+    num_heads: 8
+
+max_seq_len: 256
+
+dataloader:
+  batch_size: 8
+  num_workers: 0
+
+datasets:
+  train:
+    limit_stories: 10000
+    tokenization_workers: 1
+  val:
+    limit_stories: 1000
+    tokenization_workers: 1

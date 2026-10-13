@@ -1,0 +1,11 @@
+defaults:
+  - train_tiny_stories
+  - _self_
+
+trainer:
+  skip_oom: False
+  use_amp: False
+  save_dir: saved/attention_compare
+
+writer:
+  run_name: tiny_stories_${oc.select:model.decoder.attention_type,softmax}_rope${oc.select:model.decoder.use_rope,false}_seed${trainer.seed}
