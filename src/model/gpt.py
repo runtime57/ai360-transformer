@@ -19,6 +19,9 @@ class TransformerDecoder(nn.Module):
         use_rope=False,
         use_only_rope=True,
         rope_base=10000.0,
+        use_headwise_gate=False,
+        use_elementwise_gate=False,
+        mlp_hidden_dim=None,
         use_alibi=False
     ):
         super().__init__()
@@ -41,13 +44,15 @@ class TransformerDecoder(nn.Module):
         self.transformer_blocks = torch.nn.ModuleList([
             TransformerBlock(
                 d_model=d_model,
-                mlp_hidden_dim=4 * d_model,
+                mlp_hidden_dim=mlp_hidden_dim if mlp_hidden_dim is not None else 4 * d_model,
                 num_heads=num_heads,
                 ffn_dropout=ffn_dropout,
                 attn_dropout=attn_dropout,
                 use_rope=use_rope,
                 rope_base=rope_base,
                 max_seq_len=max_seq_len,
+                use_headwise_gate=use_headwise_gate,
+                use_elementwise_gate=use_elementwise_gate,
                 use_alibi=use_alibi
             ) for _ in range(num_layers)
         ])
@@ -116,7 +121,7 @@ class TransformerDecoder(nn.Module):
 
 
 class GPT(nn.Module):
-    def __init__(self, decoder, tokenizer=None, beam_width=1, beam_temperature=1.0, use_prob_sampling=False, context_len=512, max_new_tokens=1024):
+    def __init__(self, decoder, tokenizer=None, beam_width=1, beam_temperature=1.0, use_prob_sampling=False, context_len=512, max_new_tokens=1024, top_p=1.0):
         super().__init__()
 
         self.context_len = context_len
@@ -126,6 +131,7 @@ class GPT(nn.Module):
         self.beam_width = beam_width
         self.beam_temperature = beam_temperature
         self.use_prob_sampling = use_prob_sampling
+        self.top_p = top_p
 
     def _set_tokenizer(self, tokenizer):
         self.tokenizer = tokenizer
@@ -158,6 +164,15 @@ class GPT(nn.Module):
             x = beams[:, -self.context_len:]
             logits = self.decoder(x, **batch)[:, -1, :]
             log_probs = torch.log_softmax(logits.float() / self.beam_temperature, dim=-1)
+
+            if self.use_prob_sampling and self.top_p < 1:
+                sorted_log_probs, sorted_indices = log_probs.sort(dim=-1, descending=True)
+                cumulative_probs = sorted_log_probs.exp().cumsum(dim=-1)
+                sorted_remove = torch.zeros_like(sorted_log_probs, dtype=torch.bool)
+                sorted_remove[:, 1:] = cumulative_probs[:, :-1] >= self.top_p
+                remove = torch.empty_like(sorted_remove)
+                remove.scatter_(1, sorted_indices, sorted_remove)
+                log_probs = log_probs.masked_fill(remove, float("-inf"))
 
             log_probs = log_probs.masked_fill(finished[:, None], float("-inf"))
             log_probs[:, eos_id] = torch.where(finished, 0.0, log_probs[:, eos_id])
