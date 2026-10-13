@@ -1,0 +1,11 @@
+[
+  "/home/justiee/hse/ai360-transformer/.venv/bin/python",
+  "-u",
+  "/home/justiee/hse/ai360-transformer/work/test_inference_20261013_7cef162/capture_results.py",
+  "model=gpt_rope_elementwise_gate",
+  "inferencer.from_pretrained=/home/justiee/hse/ai360-transformer/saved/tiny_stories_rope_elementwise_gate/model_best.pth",
+  "dataloader.batch_size=128",
+  "inferencer.device=cuda",
+  "tokenizer.vocab_path=/home/justiee/hse/ai360-transformer/work/test_inference_20261013_7cef162/tokenizer.json",
+  "hydra.run.dir=/home/justiee/hse/ai360-transformer/work/test_inference_20261013_7cef162/results/tiny_stories_rope_elementwise_gate/hydra"
+]

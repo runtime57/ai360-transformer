@@ -1,0 +1,15 @@
+{
+  "metrics": {
+    "test": {
+      "loss": 1.243207364213572
+    }
+  },
+  "target_tokens": 4884080.0,
+  "partitions": {
+    "test": {
+      "stories": 21990,
+      "sequences": 22648,
+      "batches": 177
+    }
+  }
+}

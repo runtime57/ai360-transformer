@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="1080" height="710" preserveAspectRatio="xMinYMin meet" viewBox="0 0 1080 710" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="1080" height="710"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-710)" style="clip-path: url(#clip)">
+		<g transform="">
+			<rect x="0" y="0" width="1080" height="710" style="stroke: none; stroke-linecap: butt; stroke-width: 1.5; fill: rgb(100%,100%,100%); fill-rule: evenodd;"/>
+			<rect x="0" y="701" width="1080" height="9" style="stroke: none; stroke-linecap: butt; stroke-width: 1.5; fill: rgb(3%,49%,67%); fill-rule: evenodd;"/>
+			<text x="42" y="638" style="font-family: DVB; font-size: 44px;fill: rgb(3%,49%,67%); stroke:none;" transform="translate(0,1276) scale(1,-1)">RoPE</text>
+			<text x="42" y="599" style="font-family: DV; font-size: 24px;fill: rgb(8%,17%,25%); stroke:none;" transform="translate(0,1198) scale(1,-1)">Позиция токена задаёт угол поворота Q и K.</text>
+			<text x="42" y="548" style="font-family: DVB; font-size: 24px;fill: rgb(8%,17%,25%); stroke:none;" transform="translate(0,1096) scale(1,-1)">Поворот каждой пары координат</text>
+			<rect x="42" y="256" width="996" height="272" rx="12" ry="12" style="stroke: none; stroke-linecap: butt; stroke-width: 1.5; fill: rgb(92%,96%,97%); fill-rule: evenodd;"/>
+			<circle cx="210" cy="403" r="78" style="stroke: rgb(83%,88%,91%); stroke-linecap: butt; stroke-width: 2; fill: none; fill-rule: evenodd;"/>
+			<path d="M 120,403 L 300,403 Z" style="stroke: rgb(83%,88%,91%); stroke-linecap: butt; stroke-width: 1.5;"/>
+			<path d="M 210,493 L 210,313 Z" style="stroke: rgb(83%,88%,91%); stroke-linecap: butt; stroke-width: 1.5;"/>
+			<path d="M 210,403 L 288,403 Z" style="stroke: rgb(32%,40%,47%); stroke-linecap: butt; stroke-width: 2;"/>
+			<polygon points="288 403, 278.0014 398.4144, 278.0014 407.5856" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(32%,40%,47%); fill-rule: evenodd;"/>
+			<path d="M 210,403 L 288,403 Z" style="stroke: rgb(3%,49%,67%); stroke-linecap: butt; stroke-width: 4;"/>
+			<polygon points="288 403, 278.0014 398.4144, 278.0014 407.5856" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(3%,49%,67%); fill-rule: evenodd;"/>
+			<text x="169.100341796875" y="301" style="font-family: DVB; font-size: 25px;fill: rgb(8%,17%,25%); stroke:none;" transform="translate(0,602) scale(1,-1)">m = 0</text>
+			<circle cx="540" cy="403" r="78" style="stroke: rgb(83%,88%,91%); stroke-linecap: butt; stroke-width: 2; fill: none; fill-rule: evenodd;"/>
+			<path d="M 450,403 L 630,403 Z" style="stroke: rgb(83%,88%,91%); stroke-linecap: butt; stroke-width: 1.5;"/>
+			<path d="M 540,493 L 540,313 Z" style="stroke: rgb(83%,88%,91%); stroke-linecap: butt; stroke-width: 1.5;"/>
+			<path d="M 540,403 L 618,403 Z" style="stroke: rgb(32%,40%,47%); stroke-linecap: butt; stroke-width: 2;"/>
+			<polygon points="618 403, 608.0014 398.4144, 608.0014 407.5856" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(32%,40%,47%); fill-rule: evenodd;"/>
+			<path d="M 540,403 L 606.496913,443.769604 Z" style="stroke: rgb(3%,49%,67%); stroke-linecap: butt; stroke-width: 4;"/>
+			<polygon points="606.4969 443.7696, 600.3697 434.6341, 595.576 442.4528" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(3%,49%,67%); fill-rule: evenodd;"/>
+			<polyline points="577 403, 576.9938 403.6783, 576.9751 404.3564, 576.9441 405.034, 576.9006 405.7109, 576.8447 406.3869, 576.7764 407.0618, 576.6957 407.7353, 576.6028 408.4072, 576.4975 409.0773, 576.3799 409.7454, 576.2502 410.4112, 576.1082 411.0745, 575.9541 411.7351, 575.7879 412.3927, 575.6097 413.0472, 575.4196 413.6984, 575.2175 414.3459, 575.0036 414.9896, 574.7779 415.6293, 574.5405 416.2647, 574.2915 416.8957, 574.031 417.522, 573.7591 418.1434, 573.4758 418.7598, 573.1813 419.3708, 572.8756 419.9763, 572.5588 420.5762, 572.2312 421.1701, 571.8926 421.7579, 571.5434 422.3394" style="stroke: rgb(3%,49%,67%); stroke-linecap: butt; stroke-width: 2; fill: None; fill-rule: evenodd;"/>
+			<text x="499.100341796875" y="301" style="font-family: DVB; font-size: 25px;fill: rgb(8%,17%,25%); stroke:none;" transform="translate(0,602) scale(1,-1)">m = 1</text>
+			<circle cx="870" cy="403" r="78" style="stroke: rgb(83%,88%,91%); stroke-linecap: butt; stroke-width: 2; fill: none; fill-rule: evenodd;"/>
+			<path d="M 780,403 L 960,403 Z" style="stroke: rgb(83%,88%,91%); stroke-linecap: butt; stroke-width: 1.5;"/>
+			<path d="M 870,493 L 870,313 Z" style="stroke: rgb(83%,88%,91%); stroke-linecap: butt; stroke-width: 1.5;"/>
+			<path d="M 870,403 L 948,403 Z" style="stroke: rgb(32%,40%,47%); stroke-linecap: butt; stroke-width: 2;"/>
+			<polygon points="948 403, 938.0014 398.4144, 938.0014 407.5856" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(32%,40%,47%); fill-rule: evenodd;"/>
+			<path d="M 870,403 L 905.380497,472.514174 Z" style="stroke: rgb(3%,49%,67%); stroke-linecap: butt; stroke-width: 4;"/>
+			<polygon points="905.3805 472.5142, 904.9319 461.5233, 896.7585 465.6833" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(3%,49%,67%); fill-rule: evenodd;"/>
+			<polyline points="907 403, 906.9751 404.3564, 906.9006 405.7109, 906.7764 407.0618, 906.6028 408.4072, 906.3799 409.7454, 906.1082 411.0745, 905.7879 412.3927, 905.4196 413.6984, 905.0036 414.9896, 904.5405 416.2647, 904.031 417.522, 903.4758 418.7598, 902.8756 419.9763, 902.2312 421.1701, 901.5434 422.3394, 900.8133 423.4828, 900.0417 424.5986, 899.2297 425.6853, 898.3785 426.7416, 897.4891 427.7659, 896.5627 428.757, 895.6006 429.7134, 894.6041 430.634, 893.5746 431.5173, 892.5133 432.3624, 891.4218 433.1679, 890.3015 433.933, 889.1539 434.6564, 887.9806 435.3373, 886.7831 435.9747" style="stroke: rgb(3%,49%,67%); stroke-linecap: butt; stroke-width: 2; fill: None; fill-rule: evenodd;"/>
+			<text x="829.100341796875" y="301" style="font-family: DVB; font-size: 25px;fill: rgb(8%,17%,25%); stroke:none;" transform="translate(0,602) scale(1,-1)">m = 2</text>
+			<path d="M 321,403 L 423,403 Z" style="stroke: rgb(3%,49%,67%); stroke-linecap: butt; stroke-width: 2.6;"/>
+			<polygon points="423 403, 413.0014 398.4144, 413.0014 407.5856" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(3%,49%,67%); fill-rule: evenodd;"/>
+			<path d="M 651,403 L 753,403 Z" style="stroke: rgb(3%,49%,67%); stroke-linecap: butt; stroke-width: 2.6;"/>
+			<polygon points="753 403, 743.0014 398.4144, 743.0014 407.5856" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(3%,49%,67%); fill-rule: evenodd;"/>
+			<text x="351.1982421875" y="427" style="font-family: DVB; font-size: 25px;fill: rgb(3%,49%,67%); stroke:none;" transform="translate(0,854) scale(1,-1)">+θᵢ</text>
+			<text x="681.1982421875" y="427" style="font-family: DVB; font-size: 25px;fill: rgb(3%,49%,67%); stroke:none;" transform="translate(0,854) scale(1,-1)">+θᵢ</text>
+			<text x="319.9482421875" y="268" style="font-family: DV; font-size: 18px;fill: rgb(32%,40%,47%); stroke:none;" transform="translate(0,536) scale(1,-1)">Одинаковый вектор показан в трёх позициях.</text>
+			<text x="42" y="218" style="font-family: DVB; font-size: 30px;fill: rgb(8%,17%,25%); stroke:none;" transform="translate(0,436) scale(1,-1)">q′ₘ = Rₘ qₘ     k′ₙ = Rₙ kₙ</text>
+			<text x="42" y="178" style="font-family: DV; font-size: 23px;fill: rgb(8%,17%,25%); stroke:none;" transform="translate(0,356) scale(1,-1)">Пары координат (2i, 2i + 1) поворачиваются на угол mθᵢ.</text>
+			<text x="42" y="122" style="font-family: DVB; font-size: 30px;fill: rgb(8%,17%,25%); stroke:none;" transform="translate(0,244) scale(1,-1)">θᵢ = 10000</text>
+			<text x="222.5830078125" y="140" style="font-family: DVB; font-size: 24px;fill: rgb(8%,17%,25%); stroke:none;" transform="translate(0,280) scale(1,-1)">−2i/dₕ</text>
+			<text x="363" y="122" style="font-family: DV; font-size: 23px;fill: rgb(32%,40%,47%); stroke:none;" transform="translate(0,244) scale(1,-1)">•  V без поворота  •  0 обучаемых параметров</text>
+			<rect x="42" y="36" width="996" height="65" rx="12" ry="12" style="stroke: none; stroke-linecap: butt; stroke-width: 1.5; fill: rgb(86%,94%,96%); fill-rule: evenodd;"/>
+			<text x="63" y="59" style="font-family: DVB; font-size: 28px;fill: rgb(3%,49%,67%); stroke:none;" transform="translate(0,118) scale(1,-1)">(q′ₘ)ᵀk′ₙ = qₘᵀ Rₙ₋ₘ kₙ</text>
+			<text x="593" y="60" style="font-family: DV; font-size: 21px;fill: rgb(8%,17%,25%); stroke:none;" transform="translate(0,120) scale(1,-1)">Позиционный вклад зависит от n − m.</text>
+			<text x="42" y="11" style="font-family: DV; font-size: 18px;fill: rgb(32%,40%,47%); stroke:none;" transform="translate(0,22) scale(1,-1)">Su et al. · RoFormer · arXiv:2104.09864</text>
+		</g>
+	</g>
+</svg>

@@ -1,0 +1,110 @@
+[
+  {
+    "index": 1,
+    "title": "The shiny rock",
+    "prompt": "Once upon a time",
+    "seed": 42
+  },
+  {
+    "index": 2,
+    "title": "The moon in a bucket",
+    "prompt": "Once upon a time, a little girl named Kotletka found the moon in a bucket of water. She wanted to take it home.",
+    "seed": 42
+  },
+  {
+    "index": 3,
+    "title": "The dragon who was afraid of fire",
+    "prompt": "Once upon a time, there was a little dragon who was afraid of fire. His best friend was a tiny mouse.",
+    "seed": 42
+  },
+  {
+    "index": 4,
+    "title": "A letter from tomorrow",
+    "prompt": "One day, a boy named Tim found a letter in his pocket. It said, \"Do not open the blue door tomorrow.\"",
+    "seed": 42
+  },
+  {
+    "index": 5,
+    "title": "The cat and the robot",
+    "prompt": "Once upon a time, a little robot wanted to learn how to be a cat. He asked a big orange cat to help him.",
+    "seed": 42
+  },
+  {
+    "index": 6,
+    "title": "The cloud in the kitchen",
+    "prompt": "One morning, Kotletka woke up and found a small cloud in the kitchen. The cloud was crying.",
+    "seed": 42
+  },
+  {
+    "index": 7,
+    "title": "The secret of the lost sock",
+    "prompt": "Once upon a time, a little boy found a tiny door inside his lost sock. He opened it and saw",
+    "seed": 42
+  },
+  {
+    "index": 8,
+    "title": "The AI360 students",
+    "prompt": "Once upon a time, there were three AI360 students named Tom, Lily and Ben. They wanted to teach a little robot how to tell stories.",
+    "seed": 42
+  },
+  {
+    "index": 9,
+    "title": "The Yandex data center",
+    "prompt": "Once upon a time, the AI360 students visited a Yandex data center. There were many computers and loud fans. Suddenly, all the lights went out.",
+    "seed": 42
+  },
+  {
+    "index": 10,
+    "title": "The sleepy Yandex computer",
+    "prompt": "Once upon a time, in a Yandex data center, a little computer felt very sleepy. Two AI360 students came to help it.",
+    "seed": 42
+  },
+  {
+    "index": 11,
+    "title": "The forbidden red button",
+    "prompt": "Once upon a time, three students from AI360 went to a Yandex data center. Tom brought a little robot. Lily brought a sandwich. Ben brought a big red button. The robot said, \"Do not press that button!\"",
+    "seed": 42
+  },
+  {
+    "index": 12,
+    "title": "The forbidden red button, another version",
+    "prompt": "Once upon a time, three students from AI360 went to a Yandex data center. Tom brought a little robot. Lily brought a sandwich. Ben brought a big red button. The robot said, \"Do not press that button!\"",
+    "seed": 123
+  },
+  {
+    "index": 13,
+    "title": "The data center sneezes",
+    "prompt": "One day, the AI360 students were working in a Yandex data center. Suddenly, a big computer sneezed. \"Oh no!\" said Tom. \"Our computer has a cold!\"",
+    "seed": 77
+  },
+  {
+    "index": 14,
+    "title": "The runaway shadow",
+    "prompt": "One morning, a little girl named Lily woke up and saw that her shadow was gone. She found it outside, playing with a dog.",
+    "seed": 123
+  },
+  {
+    "index": 15,
+    "title": "The dragon's birthday cake",
+    "prompt": "Once upon a time, a little dragon wanted to bake a birthday cake for his best friend. But every time he sneezed, the cake caught fire.",
+    "seed": 77
+  },
+  {
+    "index": 16,
+    "title": "The shoes that did not want to walk",
+    "prompt": "Once upon a time, a boy named Ben had a pair of red shoes. One day, the shoes said, \"We do not want to walk anymore!\"",
+    "seed": 42
+  },
+  {
+    "index": 17,
+    "title": "The tiny king in a teapot",
+    "prompt": "One day, a little girl found a tiny king living in her teapot. The king said, \"Please do not pour hot water on my house!\"",
+    "seed": 123
+  },
+  {
+    "index": 18,
+    "title": "The moon's letter",
+    "prompt": "Once upon a time, the moon sent a letter to a little girl. It said, \"I am tired of being up here. Can I come to your birthday party?\"",
+    "seed": 77
+  }
+]
