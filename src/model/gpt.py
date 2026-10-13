@@ -99,7 +99,7 @@ class TransformerDecoder(nn.Module):
         res = {}
         all_logits = []
         if training and len(self.transformer_blocks) > 1:
-            stop_idx = torch.randint(1, len(self.transformer_blocks), (1,)).item()
+            stop_idx = torch.randint(1, len(self.transformer_blocks) + 1, (1,)).item()
 
         seq = self.d_model**0.5 * self.token_embedding(seq)
         seq = seq + pos_embed
@@ -107,7 +107,7 @@ class TransformerDecoder(nn.Module):
 
         for i, block in enumerate(self.transformer_blocks):
             seq = block(seq)
-            if training and len(self.transformer_blocks) > 1 and i + 1 == stop_idx:
+            if training and i + 1 == stop_idx:
                 tmp_embeds = self.final_norm(seq)
                 prefix_logits = tmp_embeds @ self.token_embedding.weight.T
                 res["prefix_logits"] = prefix_logits
@@ -117,7 +117,7 @@ class TransformerDecoder(nn.Module):
                 all_logits.append(prefix_logits)
 
         if inference:
-            return all_logits
+            return {"all_logits": torch.stack(all_logits, dim=0)}
 
         embeds = self.final_norm(seq)
         logits = embeds @ self.token_embedding.weight.T
@@ -145,10 +145,10 @@ class GPT(nn.Module):
             self.decoder._set_context(**context)
 
 
-    def forward(self, seq, training = False, **batch):
+    def forward(self, seq, training = False, inference = False, **batch):
         # seq: [B, L] (already tokenized)
 
-        return self.decoder(seq, training=training, **batch)
+        return self.decoder(seq, training=training, inference=inference, **batch)
 
     @torch.no_grad()
     def predict(self, seq, **batch):

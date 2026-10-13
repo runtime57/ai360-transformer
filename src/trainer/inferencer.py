@@ -69,10 +69,11 @@ class Inferencer(BaseTrainer):
         # define metrics
         self.metrics = metrics
         if self.metrics is not None:
-            self.evaluation_metrics = MetricTracker(
-                *[m.name for m in self.metrics["inference"]],
-                writer=None,
-            )
+            self.evaluation_metrics = MetricTracker(writer=None)
+            # self.evaluation_metrics = MetricTracker(
+            #     *[m.name for m in self.metrics["inference"]],
+            #     writer=None,
+            # )
         else:
             self.evaluation_metrics = None
 
@@ -122,9 +123,34 @@ class Inferencer(BaseTrainer):
         outputs = self.model(inference = True, **batch)
         batch.update(outputs)
 
+    
         if metrics is not None:
             for met in self.metrics["inference"]:
-                metrics.update(met.name, met(**batch))
+                values = met(**batch)
+                if isinstance(values, torch.Tensor) and values.ndim == 1:
+                    targets = batch.get("target", batch.get("labels"))
+
+                    if targets is None:
+                        raise ValueError("Batch must contain 'target' or 'labels'")
+
+                    # Число токенов, по которым рассчитан batch mean.
+                    n = targets.numel()
+
+                    if met.ignore_index is not None:
+                        n = targets.ne(met.ignore_index).sum().item()
+
+                    if n == 0:
+                        continue
+
+                    for i, value in enumerate(values):
+                        metrics.update_avg(
+                            key=f"loss_prefix_{i + 1}",
+                            avg_value=value.item(),
+                            n=n,
+                        )
+                else:
+                    metrics.update(met.name, values)
+                # metrics.update(met.name, met(**batch))
 
         # Some saving logic. This is an example
         # Use if you need to save predictions on disk

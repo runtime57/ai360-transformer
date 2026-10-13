@@ -1,7 +1,7 @@
 defaults:
   - model: gpt
-  - writer: wandb
-  - metrics: empty
+  - writer: disabled_wandb
+  - metrics: telescopic_metric
   - datasets: tiny_stories
   - dataloader: main
   - batch_transforms: empty
@@ -21,7 +21,7 @@ trainer:
   use_amp: True
   amp_dtype: float16
   device: auto
-  override: False
+  override: True
   monitor: "min val_loss"
   save_period: 2
   early_stop: ${trainer.epochs}

@@ -1,0 +1,6 @@
+device: auto
+train: []
+inference:
+  - _target_: src.metrics.telescopic_metric
+    name: telescopic_loss
+    ignore_index: 0
