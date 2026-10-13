@@ -69,10 +69,9 @@ class Inferencer(BaseTrainer):
         # define metrics
         self.metrics = metrics
         if self.metrics is not None:
-            self.evaluation_metrics = MetricTracker(
-                *[m.name for m in self.metrics["inference"]],
-                writer=None,
-            )
+            # keys are added dynamically in process_batch (a telescopic
+            # metric produces one value per prefix depth)
+            self.evaluation_metrics = MetricTracker(writer=None)
         else:
             self.evaluation_metrics = None
 
@@ -119,36 +118,30 @@ class Inferencer(BaseTrainer):
         batch = self.move_batch_to_device(batch)
         batch = self.transform_batch(batch)  # transform batch on device -- faster
 
-        outputs = self.model(**batch)
+        outputs = self.model(inference=True, **batch)
         batch.update(outputs)
 
         if metrics is not None:
             for met in self.metrics["inference"]:
-                metrics.update(met.name, met(**batch))
+                values = met(**batch)
 
-        # Some saving logic. This is an example
-        # Use if you need to save predictions on disk
+                if isinstance(values, dict):
+                    # telescopic metric: one value per prefix depth
+                    targets = batch.get("target", batch.get("labels"))
+                    if targets is None:
+                        raise ValueError("Batch must contain 'target' or 'labels'")
 
-        batch_size = batch["logits"].shape[0]
-        current_id = batch_idx * batch_size
+                    n = targets.numel()
+                    if getattr(met, "ignore_index", None) is not None:
+                        n = targets.ne(met.ignore_index).sum().item()
 
-        for i in range(batch_size):
-            # clone because of
-            # https://github.com/pytorch/pytorch/issues/1995
-            logits = batch["logits"][i].clone()
-            label = batch["labels"][i].clone()
-            pred_label = logits.argmax(dim=-1)
+                    if n == 0:
+                        continue
 
-            output_id = current_id + i
-
-            output = {
-                "pred_label": pred_label,
-                "label": label,
-            }
-
-            if self.save_path is not None:
-                # you can use safetensors or other lib here
-                torch.save(output, self.save_path / part / f"output_{output_id}.pth")
+                    for key, value in values.items():
+                        metrics.update_avg(key, float(value), n)
+                else:
+                    metrics.update(met.name, values)
 
         return batch
 

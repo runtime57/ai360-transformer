@@ -156,8 +156,16 @@ class GPT(nn.Module):
         if hasattr(self.decoder, "_set_context"):
             self.decoder._set_context(**context)
 
-    def forward(self, seq, **batch):
-        # seq: [B, L] (already tokenized)
+    def forward(self, seq, inference=False, **batch):
+        if inference and self.telescopic:
+            num_blocks = len(self.decoder.transformer_blocks)
+            all_logits = torch.stack(
+                [
+                    self.decoder(seq, prefix_depth=k)
+                    for k in range(1, num_blocks + 1)
+                ]
+            )
+            return {"all_logits": all_logits, "logits": all_logits[-1]}
 
         outputs = {'logits': self.decoder(seq, **batch)}
 

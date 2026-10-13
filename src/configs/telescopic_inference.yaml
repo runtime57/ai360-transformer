@@ -1,0 +1,29 @@
+defaults:
+  - model: gpt_rope
+  - metrics: telescopic
+  - datasets: tiny_stories_telescopic_eval
+  - dataloader: main
+  - batch_transforms: empty
+  - instance_transforms: empty
+  - tokenizer: bpe_tiny_stories
+  - loss: cross_entropy
+  - _self_
+
+# Telescopic Language Models (arXiv:2609.35769): evaluate the loss of the
+# model truncated after each transformer block (depth = 1 .. num_layers).
+model:
+  telescopic: True
+
+inferencer:
+  device_tensors: ["seq", "target"]
+  device: auto
+  from_pretrained: "saved/testing/model_best.pth"
+  save_path: "telescopic_inference"
+  seed: 42
+
+# keep the stacked all_logits ([num_layers, B, L, V]) memory-friendly
+dataloader:
+  batch_size: 16
+  num_workers: 2
+
+max_seq_len: 512

@@ -20,6 +20,7 @@ class TinyStoriesDataset:
         tokenizer=None,
         tokenization_workers=4,
         transforms=None,
+        max_stories=None,
     ):
         assert part in ['train', 'val', 'test']
 
@@ -40,7 +41,10 @@ class TinyStoriesDataset:
             dataset.save_to_disk(str(raw_data_path))
 
         self.tokenization_workers = tokenization_workers
-        self.stories = self._prepare(part, val_ratio, raw_data_path)
+        stories = self._prepare(part, val_ratio, raw_data_path)
+        if max_stories is not None:
+            stories = stories.select(range(min(max_stories, len(stories))))
+        self.stories = stories
 
         if tokenizer is not None:
             self._set_tokenizer(tokenizer)

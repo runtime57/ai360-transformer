@@ -1,0 +1,8 @@
+test:
+  _target_: src.datasets.TinyStoriesDataset
+  part: "test"
+  max_seq_len: ${max_seq_len}
+  val_ratio: 0.01
+  tokenization_workers: 8
+  max_stories: 512 # keep the telescopic eval run short
+  transforms: ${instance_transforms.inference}
