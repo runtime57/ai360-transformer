@@ -1,7 +1,0 @@
-gpt: test_loss=1.24320736, seconds=25.57
-gpt_alibi: test_loss=1.23369697, seconds=26.97
-gpt_elementwise_gate: test_loss=1.22733923, seconds=25.56
-gpt_headwise_gate: test_loss=1.23461420, seconds=25.53
-gpt_rope: test_loss=1.22702813, seconds=29.86
-gpt_rope_elementwise_gate: test_loss=1.21322330, seconds=30.50
-gpt_rope_headwise_gate: test_loss=1.22001855, seconds=30.43
