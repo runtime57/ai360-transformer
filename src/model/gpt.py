@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch
+from torch.utils.checkpoint import checkpoint
 
 from .transformer_utils.transformer_block import TransformerBlock
 
@@ -18,9 +19,14 @@ class TransformerDecoder(nn.Module):
         max_seq_len=None,
         use_rope=False,
         use_only_rope=True,
-        rope_base=10000.0
+        rope_base=10000.0,
+        n_future_tokens=None,
+        grad_checkpointing=False
     ):
         super().__init__()
+
+        # recompute block activations in backward instead of storing them (less memory, ~30% more compute)
+        self.grad_checkpointing = grad_checkpointing
 
         self.vocab_size = vocab_size
         self.d_model = d_model
@@ -36,20 +42,32 @@ class TransformerDecoder(nn.Module):
 
         self.seq_dropout = nn.Dropout(seq_dropout)
 
+        block = lambda: TransformerBlock(
+            d_model=d_model,
+            mlp_hidden_dim=4 * d_model,
+            num_heads=num_heads,
+            ffn_dropout=ffn_dropout,
+            attn_dropout=attn_dropout,
+            use_rope=use_rope,
+            rope_base=rope_base,
+            max_seq_len=max_seq_len
+        )
         self.transformer_blocks = torch.nn.ModuleList([
-            TransformerBlock(
-                d_model=d_model,
-                mlp_hidden_dim=4 * d_model,
-                num_heads=num_heads,
-                ffn_dropout=ffn_dropout,
-                attn_dropout=attn_dropout,
-                use_rope=use_rope,
-                rope_base=rope_base,
-                max_seq_len=max_seq_len
-            ) for _ in range(num_layers)
+            block() for _ in range(num_layers)
         ])
 
-        self.final_norm = nn.LayerNorm(d_model)
+        # None: plain next-token model (single final norm, logits [B, L, V])
+        # int:  multi-token prediction with that many heads (logits [B, N, L, V])
+        self.n_future_tokens = n_future_tokens
+        if n_future_tokens is None:
+            self.final_norm = nn.LayerNorm(d_model)
+        else:
+            self.mtps = nn.ModuleList([
+                nn.Sequential(
+                    block(),
+                    nn.LayerNorm(d_model)
+                ) for _ in range(n_future_tokens)
+            ])
 
         self.apply(self._init_weights)
 
@@ -104,12 +122,26 @@ class TransformerDecoder(nn.Module):
         seq = self.seq_dropout(seq)
 
         for block in self.transformer_blocks:
-            seq = block(seq)
+            seq = self._maybe_checkpoint(block, seq)
 
-        embeds = self.final_norm(seq)
-        logits = embeds @ self.token_embedding.weight.T
+        if self.n_future_tokens is None:
+            return self.final_norm(seq) @ self.token_embedding.weight.T
 
-        return logits
+        logits = []
+        for headnorm in self.mtps:
+            logits.append(self._maybe_checkpoint(self._head_logits, headnorm, seq))
+        return torch.stack(logits, dim=1)  # [B, N, L, Vocab]
+
+    def _head_logits(self, headnorm, seq):
+        return headnorm(seq) @ self.token_embedding.weight.T
+
+    def _maybe_checkpoint(self, fn, *args):
+        # only stores fn's inputs; everything inside fn is recomputed during backward
+        # (dropout masks are reproduced: checkpoint restores the RNG state)
+        if self.grad_checkpointing and self.training and torch.is_grad_enabled():
+            return checkpoint(fn, *args, use_reentrant=False)
+        return fn(*args)
+    
 
 
 class GPT(nn.Module):
@@ -134,8 +166,12 @@ class GPT(nn.Module):
 
     def forward(self, seq, **batch):
         # seq: [B, L] (already tokenized)
+        logits = self.decoder(seq, **batch)
+        if self.decoder.n_future_tokens is None:
+            return {'logits': logits}  # [B, L, Vocab]
 
-        return {'logits': self.decoder(seq, **batch)}
+        # [B, N, L, Vocab]
+        return {'logits': logits[:, 0], 'mtp_logits': logits}
 
     @torch.no_grad()
     def predict(self, seq, **batch):
@@ -153,7 +189,8 @@ class GPT(nn.Module):
                 break
 
             x = beams[:, -self.context_len:]
-            logits = self.decoder(x, **batch)[:, -1, :]
+            logits = self.decoder(x, **batch)
+            logits = logits[:, -1, :] if logits.ndim == 3 else logits[:, 0, -1, :]
             log_probs = torch.log_softmax(logits.float() / self.beam_temperature, dim=-1)
 
             log_probs = log_probs.masked_fill(finished[:, None], float("-inf"))
