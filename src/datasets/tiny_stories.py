@@ -27,7 +27,7 @@ class TinyStoriesDataset:
         override=False,
         raw_data_path=None,
         cache_dir=None,
-        n_future_tokens=1,
+        n_future_tokens=None,
         tokenizer=None,
         tokenization_workers=4,
         transforms=None,
@@ -168,7 +168,8 @@ class TinyStoriesDataset:
 
         flat, offsets = self._load_or_build_stream(tokenizer)
 
-        len_chunk = self.max_seq_len + self.n_future_tokens
+        # None: plain next-token targets [L]; int: targets of all future offsets [N, L]
+        len_chunk = self.max_seq_len + (self.n_future_tokens or 1)
 
         if self.part == "train":
             # int32 keeps RAM at half of int64; __getitem__ casts to long
@@ -207,7 +208,9 @@ class TinyStoriesDataset:
     def __getitem__(self, idx):
         data = self.tokens[idx].long()
 
-        seq, target = data[:self.max_seq_len], data[1:].unfold(0, self.max_seq_len, 1)
+        seq, target = data[:self.max_seq_len], data[1:]
+        if self.n_future_tokens is not None:
+            target = target.unfold(0, self.max_seq_len, 1)
 
         instance_data = {"seq": seq, "target": target}
         instance_data = self.preprocess_data(instance_data)
