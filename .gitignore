@@ -116,3 +116,6 @@ __MACOSX/
 data/tokenizer/
 work/
 results/
+
+# large local checkpoints
+src/exp-data/*.pth

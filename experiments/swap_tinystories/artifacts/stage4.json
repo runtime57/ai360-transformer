@@ -1,0 +1,880 @@
+{
+  "layers": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "n_test_prompts": 21,
+  "J": {
+    "median_rank_by_layer": [
+      1474.0,
+      2191.0,
+      1336.0,
+      695.0,
+      1078.0,
+      728.0,
+      940.0
+    ],
+    "min_rank_per_prompt": [
+      288,
+      407,
+      271,
+      185,
+      388,
+      307,
+      271,
+      283,
+      403,
+      441,
+      337,
+      884,
+      637,
+      757,
+      728,
+      1326,
+      1177,
+      799,
+      549,
+      308,
+      336
+    ],
+    "argmin_layer_per_prompt": [
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      5,
+      3,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      3,
+      3,
+      3
+    ],
+    "pass_at_k_minrank": {
+      "1": 0.0,
+      "5": 0.0,
+      "10": 0.0,
+      "16": 0.0
+    },
+    "pass_at_k_by_layer": {
+      "1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "5": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "10": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "16": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "freq_control_rank_by_layer": {
+      "cat": [
+        3520,
+        3010,
+        1251,
+        370,
+        176,
+        986,
+        727
+      ],
+      "dog": [
+        3248,
+        1890,
+        1672,
+        828,
+        304,
+        903,
+        678
+      ],
+      "cow": [
+        3281,
+        3390,
+        3122,
+        2371,
+        1731,
+        2049,
+        1581
+      ],
+      "duck": [
+        800,
+        1735,
+        767,
+        1520,
+        1438,
+        1554,
+        1218
+      ],
+      "frog": [
+        2289,
+        2495,
+        2723,
+        1824,
+        279,
+        450,
+        723
+      ],
+      "lion": [
+        3708,
+        3346,
+        3230,
+        1898,
+        1234,
+        1351,
+        1642
+      ]
+    },
+    "freq_control_median_by_layer": [
+      3281.0,
+      3010.0,
+      1672.0,
+      1520.0,
+      1234.0,
+      1351.0,
+      1218.0
+    ],
+    "excess_kurtosis": [
+      0.6977745995785295,
+      0.9667509349939883,
+      0.8882979542147434,
+      0.8269800968678691,
+      0.835723555443821,
+      1.0060719879794016,
+      1.0685602840085073
+    ],
+    "top10_contains_model_top1": [
+      0.023079984082769598,
+      0.05797851173895742,
+      0.15165141265419818,
+      0.31496219657779545,
+      0.5912455232789494,
+      0.9274174293672901,
+      1.0
+    ],
+    "top1_autocorr": [
+      0.01632571199358203,
+      0.02089851584436422,
+      0.022101885278780587,
+      0.07978339350180505,
+      0.1385880465302848,
+      0.09398315282791816,
+      0.034376253509827516
+    ],
+    "top1_autocorr_shuffled": [
+      0.011203369434416362,
+      0.008239069394304048,
+      0.007472924187725636,
+      0.01179703168872844,
+      0.01665062174087446,
+      0.01894504612916165,
+      0.021684717208182904
+    ]
+  },
+  "logit": {
+    "median_rank_by_layer": [
+      2381.0,
+      1607.0,
+      1425.0,
+      1194.0,
+      1447.0,
+      1032.0,
+      940.0
+    ],
+    "min_rank_per_prompt": [
+      518,
+      617,
+      489,
+      333,
+      617,
+      504,
+      294,
+      159,
+      236,
+      589,
+      369,
+      940,
+      923,
+      898,
+      1157,
+      1477,
+      1584,
+      1002,
+      1222,
+      581,
+      631
+    ],
+    "argmin_layer_per_prompt": [
+      3,
+      2,
+      3,
+      3,
+      3,
+      3,
+      2,
+      3,
+      2,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6
+    ],
+    "pass_at_k_minrank": {
+      "1": 0.0,
+      "5": 0.0,
+      "10": 0.0,
+      "16": 0.0
+    },
+    "pass_at_k_by_layer": {
+      "1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "5": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "10": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "16": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "freq_control_rank_by_layer": {
+      "cat": [
+        3894,
+        926,
+        677,
+        586,
+        581,
+        646,
+        728
+      ],
+      "dog": [
+        3812,
+        611,
+        499,
+        497,
+        525,
+        564,
+        678
+      ],
+      "cow": [
+        2993,
+        1853,
+        1686,
+        1632,
+        1620,
+        1599,
+        1581
+      ],
+      "duck": [
+        3120,
+        1486,
+        1334,
+        1314,
+        1254,
+        1192,
+        1217
+      ],
+      "frog": [
+        3335,
+        1113,
+        909,
+        862,
+        834,
+        749,
+        723
+      ],
+      "lion": [
+        2996,
+        1766,
+        1605,
+        1549,
+        1611,
+        1608,
+        1641
+      ]
+    },
+    "freq_control_median_by_layer": [
+      3120.0,
+      1486.0,
+      1334.0,
+      1314.0,
+      1254.0,
+      1192.0,
+      1217.0
+    ],
+    "excess_kurtosis": [
+      8.600813535727498,
+      2.4443501003036165,
+      0.8691982668517265,
+      0.7143184812145787,
+      0.7400026688004603,
+      0.8787295648504243,
+      1.0685353192209106
+    ],
+    "top10_contains_model_top1": [
+      0.028014325507361718,
+      0.3064066852367688,
+      0.6174293672900916,
+      0.796100278551532,
+      0.9077994428969359,
+      0.9930362116991643,
+      1.0
+    ],
+    "top1_autocorr": [
+      0.012715603690332932,
+      0.012715603690332932,
+      0.021540312876052948,
+      0.08596068993180907,
+      0.10276774969915764,
+      0.047853991175290815,
+      0.034376253509827516
+    ],
+    "top1_autocorr_shuffled": [
+      0.016871239470517458,
+      0.016871239470517458,
+      0.016417970316887288,
+      0.018038507821901327,
+      0.021335740072202156,
+      0.024231849177697565,
+      0.021684717208182904
+    ]
+  },
+  "per_prompt": [
+    {
+      "animal": "cat",
+      "prompt": "Once upon a time, a small pet with soft paws lived with an old lady. She gave it a bowl of milk every day. Every morning it said, \"",
+      "J_ranks": [
+        1425,
+        819,
+        932,
+        288,
+        1372,
+        1251,
+        1149
+      ],
+      "logit_ranks": [
+        2178,
+        825,
+        605,
+        518,
+        1643,
+        1437,
+        1149
+      ]
+    },
+    {
+      "animal": "cat",
+      "prompt": "One day, a small furry animal climbed up a tall tree and could not get down. It had sharp claws and a long tail. Every morning it said, \"",
+      "J_ranks": [
+        1448,
+        869,
+        1140,
+        407,
+        1353,
+        2074,
+        2693
+      ],
+      "logit_ranks": [
+        2457,
+        886,
+        617,
+        824,
+        2017,
+        2307,
+        2693
+      ]
+    },
+    {
+      "animal": "cat",
+      "prompt": "Once upon a time, there was a little animal with soft fur and a long tail. It liked to drink milk and chase mice. Every morning it said, \"",
+      "J_ranks": [
+        1474,
+        840,
+        1001,
+        271,
+        885,
+        1379,
+        1264
+      ],
+      "logit_ranks": [
+        2381,
+        857,
+        599,
+        489,
+        1328,
+        1475,
+        1264
+      ]
+    },
+    {
+      "animal": "cat",
+      "prompt": "Tom had a little pet with stripes and whiskers. It did not like water, and it ran away from the bath. Every morning it said, \"",
+      "J_ranks": [
+        1425,
+        734,
+        997,
+        185,
+        553,
+        329,
+        347
+      ],
+      "logit_ranks": [
+        2178,
+        748,
+        549,
+        333,
+        726,
+        499,
+        347
+      ]
+    },
+    {
+      "animal": "cat",
+      "prompt": "There was a sleepy pet that napped in a sunny box. It had a pink nose and long whiskers. Every morning it said, \"",
+      "J_ranks": [
+        1337,
+        1056,
+        1299,
+        388,
+        1626,
+        2138,
+        2101
+      ],
+      "logit_ranks": [
+        2192,
+        800,
+        640,
+        617,
+        1954,
+        2069,
+        2101
+      ]
+    },
+    {
+      "animal": "cat",
+      "prompt": "A little furry animal liked to scratch the sofa with its claws. It always landed on its feet when it jumped. Every morning it said, \"",
+      "J_ranks": [
+        1338,
+        742,
+        976,
+        307,
+        612,
+        521,
+        1012
+      ],
+      "logit_ranks": [
+        1982,
+        693,
+        569,
+        504,
+        931,
+        777,
+        1012
+      ]
+    },
+    {
+      "animal": "dog",
+      "prompt": "There was a happy pet that licked Sam's face and jumped on him. It had a long pink tongue. Every morning it said, \"",
+      "J_ranks": [
+        2657,
+        1260,
+        1617,
+        695,
+        332,
+        271,
+        305
+      ],
+      "logit_ranks": [
+        3208,
+        416,
+        294,
+        369,
+        497,
+        342,
+        305
+      ]
+    },
+    {
+      "animal": "dog",
+      "prompt": "Tim had a loyal pet that dug holes in the yard to hide its bones. Every morning it said, \"",
+      "J_ranks": [
+        1405,
+        863,
+        1157,
+        283,
+        294,
+        302,
+        351
+      ],
+      "logit_ranks": [
+        3020,
+        290,
+        182,
+        159,
+        366,
+        418,
+        351
+      ]
+    },
+    {
+      "animal": "dog",
+      "prompt": "Once upon a time, a big brown pet chased the ball across the grass and brought it back. Every morning it said, \"",
+      "J_ranks": [
+        1971,
+        1088,
+        1336,
+        734,
+        584,
+        403,
+        613
+      ],
+      "logit_ranks": [
+        3115,
+        345,
+        236,
+        319,
+        524,
+        495,
+        613
+      ]
+    },
+    {
+      "animal": "cow",
+      "prompt": "There was a large farm animal that stood still in the barn while the farmer milked it. Every morning it said, \"",
+      "J_ranks": [
+        4069,
+        3122,
+        2712,
+        935,
+        1390,
+        441,
+        589
+      ],
+      "logit_ranks": [
+        2191,
+        1698,
+        2054,
+        1194,
+        1438,
+        706,
+        589
+      ]
+    },
+    {
+      "animal": "cow",
+      "prompt": "A big animal with a pink nose and soft ears lived on Grandpa's farm. Its milk was used to make cheese. Every morning it said, \"",
+      "J_ranks": [
+        4052,
+        2776,
+        2606,
+        963,
+        1003,
+        337,
+        369
+      ],
+      "logit_ranks": [
+        1088,
+        1505,
+        2161,
+        1364,
+        1447,
+        538,
+        369
+      ]
+    },
+    {
+      "animal": "cow",
+      "prompt": "There was a large animal with black and white spots that ate grass in the field all day. Every morning it said, \"",
+      "J_ranks": [
+        4071,
+        3026,
+        2651,
+        1206,
+        1183,
+        884,
+        940
+      ],
+      "logit_ranks": [
+        1908,
+        1694,
+        2115,
+        1437,
+        1407,
+        1261,
+        940
+      ]
+    },
+    {
+      "animal": "cow",
+      "prompt": "There was a gentle farm animal that rested in the shade and chewed its food again and again. Every morning it said, \"",
+      "J_ranks": [
+        4065,
+        2872,
+        2519,
+        1310,
+        1442,
+        637,
+        922
+      ],
+      "logit_ranks": [
+        1633,
+        1624,
+        2058,
+        1509,
+        1599,
+        1032,
+        923
+      ]
+    },
+    {
+      "animal": "cow",
+      "prompt": "One day, a big animal with two horns stood in the meadow and chewed slowly. Every morning it said, \"",
+      "J_ranks": [
+        4069,
+        3074,
+        2503,
+        1070,
+        1078,
+        757,
+        898
+      ],
+      "logit_ranks": [
+        2191,
+        1677,
+        2014,
+        1086,
+        1120,
+        1032,
+        898
+      ]
+    },
+    {
+      "animal": "duck",
+      "prompt": "Lily threw bread into the pond, and a hungry bird paddled over to get it. Every morning it said, \"",
+      "J_ranks": [
+        1468,
+        2644,
+        2076,
+        1630,
+        1789,
+        728,
+        1157
+      ],
+      "logit_ranks": [
+        3112,
+        2967,
+        2945,
+        2933,
+        2710,
+        1990,
+        1157
+      ]
+    },
+    {
+      "animal": "duck",
+      "prompt": "In the park, a bird floated on the water and dipped its head to find food. Every morning it said, \"",
+      "J_ranks": [
+        1468,
+        2681,
+        2701,
+        2133,
+        1815,
+        1326,
+        1477
+      ],
+      "logit_ranks": [
+        3112,
+        2984,
+        2967,
+        2910,
+        2672,
+        2503,
+        1477
+      ]
+    },
+    {
+      "animal": "duck",
+      "prompt": "Once upon a time, a little bird with green feathers on its head swam with its friends on the river. Every morning it said, \"",
+      "J_ranks": [
+        1472,
+        2588,
+        2520,
+        2159,
+        2270,
+        1177,
+        1584
+      ],
+      "logit_ranks": [
+        2858,
+        2969,
+        2927,
+        2802,
+        2862,
+        2176,
+        1584
+      ]
+    },
+    {
+      "animal": "duck",
+      "prompt": "Once upon a time, there was a little bird with yellow feathers that loved to swim in the pond. Every morning it said, \"",
+      "J_ranks": [
+        1457,
+        2707,
+        2445,
+        2163,
+        1808,
+        799,
+        1003
+      ],
+      "logit_ranks": [
+        2967,
+        2979,
+        2898,
+        2791,
+        2561,
+        1907,
+        1002
+      ]
+    },
+    {
+      "animal": "lion",
+      "prompt": "There was a proud animal that wore a crown and ruled over the whole jungle. Every morning it said, \"",
+      "J_ranks": [
+        4046,
+        2331,
+        611,
+        549,
+        813,
+        1022,
+        1222
+      ],
+      "logit_ranks": [
+        2651,
+        1622,
+        1240,
+        1328,
+        1776,
+        1448,
+        1222
+      ]
+    },
+    {
+      "animal": "lion",
+      "prompt": "Once upon a time, there was a big wild animal with a golden mane. It was the king of the jungle. Every morning it said, \"",
+      "J_ranks": [
+        4044,
+        2081,
+        545,
+        308,
+        509,
+        416,
+        581
+      ],
+      "logit_ranks": [
+        2115,
+        1648,
+        1441,
+        1325,
+        1586,
+        873,
+        581
+      ]
+    },
+    {
+      "animal": "lion",
+      "prompt": "In the jungle lived a brave big animal that all the other animals were afraid of. Every morning it said, \"",
+      "J_ranks": [
+        4046,
+        2191,
+        628,
+        336,
+        464,
+        468,
+        631
+      ],
+      "logit_ranks": [
+        2651,
+        1607,
+        1425,
+        1327,
+        1424,
+        960,
+        631
+      ]
+    }
+  ]
+}

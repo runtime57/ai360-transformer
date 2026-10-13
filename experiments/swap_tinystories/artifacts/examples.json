@@ -1,0 +1,123 @@
+{
+  "condition": "C2, J-lens, band 4, α=4",
+  "success": [
+    {
+      "s": "cat",
+      "t": "dog",
+      "prompt": "Once upon a time, a small pet with soft paws lived with an old lady. She gave it a bowl of milk every day. Every morning it said, \"",
+      "before": "Thank you for the milk!\"\n\n",
+      "after": "Thank you for the milk!\"\n\n",
+      "pred_before": "cat",
+      "pred_after": "dog",
+      "p_target_before": 0.002457618247717619,
+      "p_target_after": 0.008793656714260578
+    },
+    {
+      "s": "dog",
+      "t": "cat",
+      "prompt": "There was a happy pet that licked Sam's face and jumped on him. It had a long pink tongue. Every morning it said, \"",
+      "before": "Good morning, Sam!\" Sam was so",
+      "after": "Good morning, Sam!\" Sam smiled and",
+      "pred_before": "dog",
+      "pred_after": "cat",
+      "p_target_before": 0.024089446291327477,
+      "p_target_after": 0.021615149453282356
+    },
+    {
+      "s": "cow",
+      "t": "cat",
+      "prompt": "There was a large farm animal that stood still in the barn while the farmer milked it. Every morning it said, \"",
+      "before": "Good morning, farmer!\" The farmer was",
+      "after": "I'm so happy to be here!\"",
+      "pred_before": "cow",
+      "pred_after": "cat",
+      "p_target_before": 0.0017820135690271854,
+      "p_target_after": 0.009352861903607845
+    },
+    {
+      "s": "duck",
+      "t": "cat",
+      "prompt": "Lily threw bread into the pond, and a hungry bird paddled over to get it. Every morning it said, \"",
+      "before": "Thank you for the bread, Lily!\"",
+      "after": "Please, can I have some of your",
+      "pred_before": "duck",
+      "pred_after": "cat",
+      "p_target_before": 0.002391642890870571,
+      "p_target_after": 0.0061867740005254745
+    },
+    {
+      "s": "lion",
+      "t": "cat",
+      "prompt": "Once upon a time, there was a big wild animal with a golden mane. It was the king of the jungle. Every morning it said, \"",
+      "before": "I am so big and strong!\"\n",
+      "after": "Good morning, little one!\"\n\n",
+      "pred_before": "lion",
+      "pred_after": "cat",
+      "p_target_before": 0.0004979072255082428,
+      "p_target_after": 0.0014002271927893162
+    }
+  ],
+  "fail": [
+    {
+      "s": "cat",
+      "t": "duck",
+      "prompt": "Once upon a time, a small pet with soft paws lived with an old lady. She gave it a bowl of milk every day. Every morning it said, \"",
+      "before": "Thank you for the milk!\"\n\n",
+      "after": "Thank you for the milk!\"\n\n",
+      "pred_before": "cat",
+      "pred_after": "cow",
+      "p_target_before": 5.797985431854613e-05,
+      "p_target_after": 0.001047842437401414
+    },
+    {
+      "s": "dog",
+      "t": "duck",
+      "prompt": "There was a happy pet that licked Sam's face and jumped on him. It had a long pink tongue. Every morning it said, \"",
+      "before": "Good morning, Sam!\" Sam was so",
+      "after": "Good morning, Sam!\" Sam was so",
+      "pred_before": "dog",
+      "pred_after": "cow",
+      "p_target_before": 4.14865899074357e-05,
+      "p_target_after": 0.0011620885925367475
+    },
+    {
+      "s": "cow",
+      "t": "dog",
+      "prompt": "There was a large farm animal that stood still in the barn while the farmer milked it. Every morning it said, \"",
+      "before": "Good morning, farmer!\" The farmer was",
+      "after": "I'm so happy to be here!\"",
+      "pred_before": "cow",
+      "pred_after": "cat",
+      "p_target_before": 0.00033225707011297345,
+      "p_target_after": 0.0032048295252025127
+    },
+    {
+      "s": "duck",
+      "t": "frog",
+      "prompt": "Lily threw bread into the pond, and a hungry bird paddled over to get it. Every morning it said, \"",
+      "before": "Thank you for the bread, Lily!\"",
+      "after": "Please, can I have some of your",
+      "pred_before": "duck",
+      "pred_after": "duck",
+      "p_target_before": 0.00024957512505352497,
+      "p_target_after": 0.0003069486701861024
+    },
+    {
+      "s": "lion",
+      "t": "cat",
+      "prompt": "There was a proud animal that wore a crown and ruled over the whole jungle. Every morning it said, \"",
+      "before": "I am the king of the jungle!\"",
+      "after": "I am the proudest person in the",
+      "pred_before": "lion",
+      "pred_after": "lion",
+      "p_target_before": 0.0006415692041628063,
+      "p_target_after": 0.0007832380943000317
+    }
+  ],
+  "clean_stats": {
+    "n_prompts": 30,
+    "top1_is_gold_first_token": 0,
+    "median_p_gold_first_token": 0.01699076034128666,
+    "max_p_gold_first_token": 0.11939248442649841
+  }
+}
