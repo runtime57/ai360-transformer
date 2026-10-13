@@ -13,7 +13,7 @@ The two attention variants use different similarity functions:
 $$
 \begin{aligned}
 s_{\mathrm{softmax}}(q,k)
-&=\exp\left(\frac{q^\top k}{\sqrt d}\right),\\
+&=\exp\left(\frac{q^\top k}{\sqrt d}\right)\\
 s_{\mathrm{linear}}(q,k)
 &=\phi(q)^\top\phi(k),
 \qquad \phi(x)=\mathrm{ELU}(x)+1.
@@ -61,7 +61,6 @@ with $S_0=0$ and $z_0=0$. The small lower bound $\varepsilon$ stabilizes the div
 | Linear attention | $O(Nd^2)$ |
 
 
-<!-- можно скипнуть 4 -->
 ## 4. Сombining linear attention with RoPE
 
 Apply the position-dependent rotations after the feature map:
