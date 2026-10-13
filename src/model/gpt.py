@@ -21,13 +21,15 @@ class TransformerDecoder(nn.Module):
         rope_base=10000.0,
         use_headwise_gate=False,
         use_elementwise_gate=False,
-        mlp_hidden_dim=None
+        mlp_hidden_dim=None,
+        use_alibi=False
     ):
         super().__init__()
 
         self.vocab_size = vocab_size
         self.d_model = d_model
         self.use_only_rope = use_rope & use_only_rope
+        self.use_alibi = use_alibi
 
         self.token_embedding = nn.Embedding(vocab_size, d_model)
 
@@ -50,7 +52,8 @@ class TransformerDecoder(nn.Module):
                 rope_base=rope_base,
                 max_seq_len=max_seq_len,
                 use_headwise_gate=use_headwise_gate,
-                use_elementwise_gate=use_elementwise_gate
+                use_elementwise_gate=use_elementwise_gate,
+                use_alibi=use_alibi
             ) for _ in range(num_layers)
         ])
 
@@ -90,7 +93,7 @@ class TransformerDecoder(nn.Module):
         device = seq.device
 
         pos = torch.arange(L, device=device)
-        if self.use_only_rope:
+        if self.use_only_rope or self.use_alibi:
             pos_embed = torch.zeros(1, device=device)
         elif self.use_trainable_pos_embeds:
             pos_embed = self.pos_embedding(pos)
