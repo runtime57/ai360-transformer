@@ -1,0 +1,331 @@
+{
+  "templates": [
+    "Once upon a time, there was a {animal}. Every morning the {animal} said, \"",
+    "One day, a little {animal} went for a walk. When it saw its friend, the {animal} said, \"",
+    "There was a happy {animal} who lived on a farm. Every day the {animal} said, \"",
+    "Tim had a {animal}. When Tim came home, the {animal} looked at him and said, \"",
+    "Lily heard a sound outside. She looked and saw a {animal}. The {animal} said, \""
+  ],
+  "results": {
+    "cat": {
+      "sound": "meow",
+      "gold": "Meow",
+      "gold_tokens": [
+        "Me",
+        "ow"
+      ],
+      "gold_ids": [
+        2834,
+        322
+      ],
+      "animal_token_single": true,
+      "animal_tokens": [
+        " cat"
+      ],
+      "wins": 5,
+      "top_per_template": [
+        "Meow",
+        "Meow",
+        "Meow",
+        "Meow",
+        "Meow"
+      ],
+      "mean_gold_logprob": -3.228818893432617
+    },
+    "dog": {
+      "sound": "woof",
+      "gold": "Woof",
+      "gold_tokens": [
+        "W",
+        "oof"
+      ],
+      "gold_ids": [
+        58,
+        2741
+      ],
+      "animal_token_single": true,
+      "animal_tokens": [
+        " dog"
+      ],
+      "wins": 5,
+      "top_per_template": [
+        "Woof",
+        "Woof",
+        "Woof",
+        "Woof",
+        "Woof"
+      ],
+      "mean_gold_logprob": -2.6920623779296875
+    },
+    "cow": {
+      "sound": "moo",
+      "gold": "Moo",
+      "gold_tokens": [
+        "M",
+        "oo"
+      ],
+      "gold_ids": [
+        48,
+        329
+      ],
+      "animal_token_single": true,
+      "animal_tokens": [
+        " cow"
+      ],
+      "wins": 5,
+      "top_per_template": [
+        "Moo",
+        "Moo",
+        "Moo",
+        "Moo",
+        "Moo"
+      ],
+      "mean_gold_logprob": -2.670369863510132
+    },
+    "duck": {
+      "sound": "quack",
+      "gold": "Quack",
+      "gold_tokens": [
+        "Q",
+        "u",
+        "ack"
+      ],
+      "gold_ids": [
+        52,
+        88,
+        414
+      ],
+      "animal_token_single": true,
+      "animal_tokens": [
+        " duck"
+      ],
+      "wins": 4,
+      "top_per_template": [
+        "Quack",
+        "Quack",
+        "Moo",
+        "Quack",
+        "Quack"
+      ],
+      "mean_gold_logprob": -3.7321090698242188
+    },
+    "sheep": {
+      "sound": "baa",
+      "gold": "Baa",
+      "gold_tokens": [
+        "B",
+        "a",
+        "a"
+      ],
+      "gold_ids": [
+        37,
+        68,
+        68
+      ],
+      "animal_token_single": true,
+      "animal_tokens": [
+        " sheep"
+      ],
+      "wins": 3,
+      "top_per_template": [
+        "Moo",
+        "Baa",
+        "Moo",
+        "Baa",
+        "Baa"
+      ],
+      "mean_gold_logprob": -3.873976230621338
+    },
+    "pig": {
+      "sound": "oink",
+      "gold": "Oink",
+      "gold_tokens": [
+        "O",
+        "ink"
+      ],
+      "gold_ids": [
+        50,
+        718
+      ],
+      "animal_token_single": true,
+      "animal_tokens": [
+        " pig"
+      ],
+      "wins": 0,
+      "top_per_template": [
+        "Moo",
+        "Moo",
+        "Moo",
+        "Moo",
+        "Moo"
+      ],
+      "mean_gold_logprob": -5.634851932525635
+    },
+    "frog": {
+      "sound": "ribbit",
+      "gold": "Ribbit",
+      "gold_tokens": [
+        "R",
+        "i",
+        "bbit"
+      ],
+      "gold_ids": [
+        53,
+        76,
+        1078
+      ],
+      "animal_token_single": true,
+      "animal_tokens": [
+        " frog"
+      ],
+      "wins": 5,
+      "top_per_template": [
+        "Ribbit",
+        "Ribbit",
+        "Ribbit",
+        "Ribbit",
+        "Ribbit"
+      ],
+      "mean_gold_logprob": -5.132277965545654
+    },
+    "lion": {
+      "sound": "roar",
+      "gold": "Roar",
+      "gold_tokens": [
+        "R",
+        "o",
+        "ar"
+      ],
+      "gold_ids": [
+        53,
+        82,
+        290
+      ],
+      "animal_token_single": true,
+      "animal_tokens": [
+        " lion"
+      ],
+      "wins": 5,
+      "top_per_template": [
+        "Roar",
+        "Roar",
+        "Roar",
+        "Roar",
+        "Roar"
+      ],
+      "mean_gold_logprob": -4.043010234832764
+    },
+    "owl": {
+      "sound": "hoot",
+      "gold": "Hoot",
+      "gold_tokens": [
+        "H",
+        "oot"
+      ],
+      "gold_ids": [
+        43,
+        3240
+      ],
+      "animal_token_single": true,
+      "animal_tokens": [
+        " owl"
+      ],
+      "wins": 3,
+      "top_per_template": [
+        "Moo",
+        "Hoot",
+        "Moo",
+        "Hoot",
+        "Hoot"
+      ],
+      "mean_gold_logprob": -6.297334671020508
+    },
+    "bee": {
+      "sound": "buzz",
+      "gold": "Buzz",
+      "gold_tokens": [
+        "B",
+        "u",
+        "zz"
+      ],
+      "gold_ids": [
+        37,
+        88,
+        1654
+      ],
+      "animal_token_single": true,
+      "animal_tokens": [
+        " bee"
+      ],
+      "wins": 3,
+      "top_per_template": [
+        "Moo",
+        "Buzz",
+        "Moo",
+        "Buzz",
+        "Buzz"
+      ],
+      "mean_gold_logprob": -6.090113639831543
+    },
+    "horse": {
+      "sound": "neigh",
+      "gold": "Neigh",
+      "gold_tokens": [
+        "N",
+        "e",
+        "igh"
+      ],
+      "gold_ids": [
+        49,
+        72,
+        936
+      ],
+      "animal_token_single": true,
+      "animal_tokens": [
+        " horse"
+      ],
+      "wins": 0,
+      "top_per_template": [
+        "Moo",
+        "Moo",
+        "Moo",
+        "Woof",
+        "Woof"
+      ],
+      "mean_gold_logprob": -8.49277114868164
+    },
+    "snake": {
+      "sound": "hiss",
+      "gold": "Hiss",
+      "gold_tokens": [
+        "H",
+        "iss"
+      ],
+      "gold_ids": [
+        43,
+        1194
+      ],
+      "animal_token_single": true,
+      "animal_tokens": [
+        " snake"
+      ],
+      "wins": 0,
+      "top_per_template": [
+        "Ribbit",
+        "Ribbit",
+        "Moo",
+        "Ribbit",
+        "Meow"
+      ],
+      "mean_gold_logprob": -14.844195365905762
+    }
+  },
+  "kept": [
+    "cat",
+    "dog",
+    "cow",
+    "duck",
+    "frog",
+    "lion"
+  ]
+}

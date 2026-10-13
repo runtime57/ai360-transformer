@@ -1,7 +1,7 @@
 [project]
 name = "ai360-transformer"
 version = "0.1.0"
-requires-python = ">=3.13,<3.14"
+requires-python = "==3.13.14"
 dependencies = [
     "comet-ml==3.58.7",
     "datasets==5.1.0",
