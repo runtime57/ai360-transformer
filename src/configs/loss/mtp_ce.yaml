@@ -1,0 +1,5 @@
+_target_: src.loss.MtpCrossEntropyLoss
+temperature: 1.0
+label_smoothing: 0.0
+ignore_class_id: 0
+head_weights: null

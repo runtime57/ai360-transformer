@@ -2,15 +2,23 @@
 
 import io
 import math
+import tempfile
 import unittest
+from pathlib import Path
+from types import SimpleNamespace
 
 import torch
 import torch.nn.functional as F
 
-from evaluate_lm import evaluate
-from src.model import TransformerDecoder
+from datasets import Dataset, DatasetDict
+from evaluate_lm import evaluate, next_token_dataset_config
+from src.datasets.collate import collate_fn
+from src.datasets.tiny_stories import TinyStoriesDataset
+from src.loss import MtpCrossEntropyLoss, TelescopicLoss
+from src.model import GPT, TransformerDecoder
 from src.model.transformer_utils.linear_attention import causal_linear_attention
 from src.model.transformer_utils.transformer_block import CausalSelfAttention
+from src.tokenizers import BpeTokenizer
 
 
 def rotate_pairs(x):
@@ -92,7 +100,7 @@ class LinearAttentionTests(unittest.TestCase):
                             max_seq_len=9,
                             attention_type=attention_type,
                             linear_chunk_size=3,
-                            **gate
+                            **gate,
                         ).eval()
                         seq = torch.randn(2, 9, 16)
                         changed = seq.clone()
@@ -182,6 +190,118 @@ class LinearAttentionTests(unittest.TestCase):
             with self.subTest(options=options), self.assertRaises(ValueError):
                 CausalSelfAttention(16, 2, **options)
 
+    def test_alibi_causality_and_incompatible_linear_combination(self):
+        layer = CausalSelfAttention(16, 2, use_alibi=True).eval()
+        seq = torch.randn(2, 7, 16)
+        changed = seq.clone()
+        changed[:, 4:] = torch.randn_like(changed[:, 4:])
+        torch.testing.assert_close(layer(seq)[:, :4], layer(changed)[:, :4])
+        with self.assertRaisesRegex(ValueError, "ALiBi"):
+            CausalSelfAttention(16, 2, use_alibi=True, attention_type="linear")
+
+    def test_linear_task_heads_with_gradient_checkpointing(self):
+        seq = torch.randint(1, 32, (2, 7))
+        for task in ("mtp", "telescopic"):
+            with self.subTest(task=task):
+                decoder = TransformerDecoder(
+                    16,
+                    32,
+                    2,
+                    2,
+                    max_seq_len=8,
+                    use_rope=True,
+                    attention_type="linear",
+                    linear_chunk_size=3,
+                    grad_checkpointing=True,
+                    n_future_tokens=3 if task == "mtp" else None,
+                )
+                model = GPT(
+                    decoder,
+                    telescopic=task == "telescopic",
+                    tokenizer=SimpleNamespace(token_to_id={"<eos>": 0}),
+                    context_len=8,
+                    max_new_tokens=1,
+                )
+                output = model(seq)
+                self.assertEqual(output["logits"].shape, (2, 7, 32))
+                if task == "mtp":
+                    self.assertEqual(output["mtp_logits"].shape, (2, 3, 7, 32))
+                    target = torch.randint(1, 32, (2, 3, 7))
+                    loss = MtpCrossEntropyLoss()(**output, target=target)["loss"]
+                else:
+                    self.assertEqual(output["prefix_logits"].shape, (2, 7, 32))
+                    target = torch.randint(1, 32, (2, 7))
+                    loss = TelescopicLoss()(**output, target=target)["loss"]
+                self.assertTrue(torch.isfinite(loss))
+                loss.backward()
+                for parameter in model.parameters():
+                    if parameter.grad is not None:
+                        self.assertTrue(torch.isfinite(parameter.grad).all())
+                model.eval()
+                self.assertEqual(model.predict(seq[:1])["seq"].shape, (1, 8))
+                if task == "telescopic":
+                    self.assertEqual(
+                        model(seq, inference=True)["all_logits"].shape, (2, 2, 7, 32)
+                    )
+
+    def test_cached_dataset_limits_and_target_layouts(self):
+        outputs = Path(__file__).resolve().parent / "outputs"
+        outputs.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(
+            prefix="linear-dataset-test-", dir=outputs
+        ) as folder:
+            fixture = Path(folder).resolve()
+            self.assertEqual(fixture.parent, outputs.resolve())
+            texts = [
+                f"A little fox played a game and went home. Story {i}."
+                for i in range(8)
+            ]
+            raw = fixture / "raw"
+            DatasetDict(
+                {
+                    "train": Dataset.from_dict({"text": texts}),
+                    "validation": Dataset.from_dict({"text": texts[:4]}),
+                }
+            ).save_to_disk(str(raw))
+            tokenizer = BpeTokenizer(vocab_size=300, min_frequency=2)
+            tokenizer.train(texts)
+            options = dict(
+                part="test",
+                max_seq_len=4,
+                val_ratio=0.25,
+                raw_data_path=raw,
+                cache_dir=fixture / "tokens",
+                allow_download=False,
+                tokenizer=tokenizer,
+                tokenization_workers=1,
+            )
+            legacy = TinyStoriesDataset(**options, limit_stories=2)
+            canonical = TinyStoriesDataset(**options, max_stories=2)
+            torch.testing.assert_close(legacy.tokens, canonical.tokens)
+            full = TinyStoriesDataset(**options)
+            self.assertGreater(len(full), len(canonical))
+            batch = collate_fn([canonical[0], canonical[1]])
+            self.assertEqual(batch["target"].shape, (2, 4))
+            mtp = TinyStoriesDataset(**options, max_stories=2, n_future_tokens=3)
+            batch_mtp = collate_fn([mtp[0], mtp[1]])
+            self.assertEqual(batch_mtp["target"].shape, (2, 3, 4))
+            torch.testing.assert_close(batch_mtp["target"][:, 0], batch["target"])
+            with self.assertRaises(ValueError):
+                TinyStoriesDataset(**options, max_stories=3, limit_stories=2)
+
+    def test_quality_normalizes_legacy_limits_and_mtp_configs(self):
+        canonical = {"max_seq_len": 8, "max_stories": 2}
+        self.assertEqual(
+            next_token_dataset_config(canonical),
+            next_token_dataset_config({"max_seq_len": 8, "limit_stories": 2}),
+        )
+        self.assertEqual(
+            next_token_dataset_config(canonical),
+            next_token_dataset_config({**canonical, "n_future_tokens": 4}),
+        )
+        with self.assertRaises(ValueError):
+            next_token_dataset_config({"max_stories": 3, "limit_stories": 2})
+
     def test_quality_metrics_weight_tokens_and_ignore_padding(self):
         class FixedModel(torch.nn.Module):
             def forward(self, seq):
@@ -199,6 +319,19 @@ class LinearAttentionTests(unittest.TestCase):
         self.assertAlmostEqual(result["perplexity"], math.exp(expected_nll), places=6)
         self.assertEqual(result["evaluated_tokens"], 4)
         self.assertEqual(result["token_accuracy"], 0.25)
+        mtp_batches = [
+            {
+                "seq": batch["seq"],
+                "target": torch.stack(
+                    (batch["target"], torch.ones_like(batch["target"])), dim=1
+                ),
+            }
+            for batch in batches
+        ]
+        self.assertEqual(
+            evaluate(FixedModel(), mtp_batches, pad_id=2, device=torch.device("cpu")),
+            result,
+        )
 
 
 if __name__ == "__main__":

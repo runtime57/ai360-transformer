@@ -33,6 +33,20 @@ def vocabulary_path(config, override=None):
     return ROOT_PATH / (override or config["tokenizer"]["vocab_path"])
 
 
+def next_token_dataset_config(config):
+    """Use a common next-token target layout, including for MTP checkpoints."""
+    result = dict(config)
+    legacy_limit = result.pop("limit_stories", None)
+    if legacy_limit is not None:
+        current_limit = result.get("max_stories")
+        if current_limit is not None and current_limit != legacy_limit:
+            raise ValueError("max_stories and limit_stories must agree")
+        result["max_stories"] = legacy_limit
+    result.setdefault("max_stories", None)
+    result.pop("n_future_tokens", None)
+    return result
+
+
 @torch.inference_mode()
 def evaluate(model, dataloader, pad_id, device, dtype="float32", max_batches=None):
     """Accumulate token sums, then compute corpus NLL and exp(corpus NLL)."""
@@ -42,6 +56,8 @@ def evaluate(model, dataloader, pad_id, device, dtype="float32", max_batches=Non
     for batch in tqdm(dataloader, desc="quality", total=total):
         seq = batch["seq"].to(device)
         target = batch["target"].to(device)
+        if target.ndim == 3:
+            target = target[:, 0]
         if target.ndim != 2:
             raise ValueError(
                 "This evaluator expects next-token targets with shape [batch, time]"
@@ -120,7 +136,8 @@ def main():
     tokenizer = instantiate(reference["tokenizer"]["instance"])
     tokenizer.load_vocab(vocab_path)
 
-    dataset_config = dict(reference["datasets"]["val"])
+    reference_dataset = next_token_dataset_config(reference["datasets"]["val"])
+    dataset_config = dict(reference_dataset)
     if dataset_config["_target_"] != "src.datasets.TinyStoriesDataset":
         raise ValueError("Expected a TinyStories checkpoint")
     dataset_config.update(
@@ -130,7 +147,7 @@ def main():
         tokenization_workers=args.tokenization_workers,
     )
     if args.limit_stories is not None or args.split == "test":
-        dataset_config["limit_stories"] = args.limit_stories
+        dataset_config["max_stories"] = args.limit_stories
     dataset = instantiate(dataset_config, tokenizer=tokenizer)
     loader = DataLoader(
         dataset,
@@ -157,7 +174,7 @@ def main():
             raise ValueError(
                 "All checkpoints must use exactly the same frozen tokenizer"
             )
-        if config["datasets"]["val"] != reference["datasets"]["val"]:
+        if next_token_dataset_config(config["datasets"]["val"]) != reference_dataset:
             raise ValueError(
                 "All checkpoints must use the same validation data and context length"
             )
@@ -175,6 +192,8 @@ def main():
             "use_rope": decoder_config.get("use_rope", False),
             "use_headwise_gate": decoder_config.get("use_headwise_gate", False),
             "use_elementwise_gate": decoder_config.get("use_elementwise_gate", False),
+            "use_alibi": decoder_config.get("use_alibi", False),
+            "n_future_tokens": decoder_config.get("n_future_tokens"),
             "seed": config["trainer"]["seed"],
             **evaluate(
                 model, loader, dataset.pad_id, device, args.dtype, args.max_batches

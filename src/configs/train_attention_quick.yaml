@@ -25,8 +25,8 @@ dataloader:
 
 datasets:
   train:
-    limit_stories: 10000
+    max_stories: 10000
     tokenization_workers: 1
   val:
-    limit_stories: 1000
+    max_stories: 1000
     tokenization_workers: 1

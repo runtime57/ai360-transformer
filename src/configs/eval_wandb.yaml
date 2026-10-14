@@ -1,0 +1,26 @@
+defaults:
+  - model: gpt_rope
+  - datasets: tiny_stories_eval
+  - dataloader: main
+  - batch_transforms: empty
+  - instance_transforms: empty
+  - tokenizer: bpe_tiny_stories
+  - loss: cross_entropy
+  - _self_
+
+model:
+  telescopic: True
+
+trainer:
+  seed: 42
+
+eval:
+  checkpoint: saved/testing/model_best.pth
+  max_batches: null
+  project_name: pytorch_template
+  entity: null
+  run_name: telescopic_eval
+  mode: online
+  eval_prefix_depths: true
+
+max_seq_len: 512

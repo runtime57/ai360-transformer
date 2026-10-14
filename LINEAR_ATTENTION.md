@@ -37,6 +37,9 @@ Quick: `d_model=256`, 4 слоя, context 256, batch 8, 3 × 200 training batche
 данные ограничены первыми 10 000 train и 1 000 val историями после split.
 Validation проходит по всему этому ограниченному val-набору. Quick предназначен
 для проверки запуска; его бюджет и метрики нужно отличать от полного эксперимента.
+Лимит задаётся через `datasets.train.max_stories` / `datasets.val.max_stories`.
+Прежнее имя `limit_stories` поддерживается для существующих checkpoints;
+при использовании обоих имён значения должны совпадать. Кеш токенов учитывает лимит.
 Для быстрой проверки самого конфига:
 
 ```bash
@@ -83,6 +86,8 @@ NLL и accuracy усредняются по непустым target-токена
 `exp(corpus NLL)`. Скрипт пишет JSON и CSV. Метрики обучения в общем trainer
 сохраняют поведение `main`; для сравнения качества используйте эту отдельную
 оценку на одинаковом held-out наборе.
+Для Multitoken оценивается первая, next-token голова на том же наборе входов;
+веса дополнительных горизонтов относятся к training loss и не смешиваются с NLL.
 
 Linear работает и с общим `inference.py`. Для checkpoint полного рецепта:
 
@@ -128,8 +133,20 @@ KV/recurrent cache не используется; время генерации 
   но требует отдельного эксперимента и отдельного имени запуска.
 - Новые методы подключайте отдельными конфигами, сохраняя baseline defaults.
   ALiBi bias относится к softmax scores; его совместимость с linear нужно
-  определить отдельно. Telescopic и Multitoken могут менять головы/выходы и
-  objective независимо от attention kernel.
+  определить отдельно. Одновременные `attention_type=linear` и `use_alibi=True`
+  отклоняются, чтобы bias не игнорировался. Telescopic и Multitoken используют
+  свои головы/выходы и objective независимо от attention kernel.
+
+Объединённые конфиги Telescopic и Multitoken можно использовать с linear:
+
+```bash
+python train.py --config-name=train_tlm model=gpt_linear_rope writer.run_name=telescopic_linear_rope
+python train.py --config-name=train_mtp ++model.decoder.attention_type=linear writer.run_name=mtp_linear
+```
+
+В Multitoken сохраняйте `model=gpt_mtp`, чтобы число голов соответствовало
+`n_future_tokens` в датасете. Эти комбинации проверены короткими тестами запуска;
+для сравнения качества нужен отдельный полный эксперимент.
 
 Проверки реализации, градиентов, causality, AMP и checkpoint layout:
 

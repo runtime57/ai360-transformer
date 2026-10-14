@@ -13,3 +13,8 @@ decoder:
 beam_width: 8
 context_len: ${max_seq_len}
 max_new_tokens: 2048
+# Telescopic Language Models (arXiv:2609.35769)
+telescopic: False
+telescopic_lambda: 1.0
+telescopic_gamma: 1.0
+predict_prefix_depth: null # null = full model at inference; set k to serve a truncated prefix

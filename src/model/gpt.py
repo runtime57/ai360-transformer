@@ -1,5 +1,9 @@
+import math
+import random
+
 import torch.nn as nn
 import torch
+from torch.utils.checkpoint import checkpoint
 
 from .transformer_utils.transformer_block import TransformerBlock
 
@@ -19,18 +23,25 @@ class TransformerDecoder(nn.Module):
         use_rope=False,
         use_only_rope=True,
         rope_base=10000.0,
+        n_future_tokens=None,
+        grad_checkpointing=False,
         use_headwise_gate=False,
         use_elementwise_gate=False,
         mlp_hidden_dim=None,
+        use_alibi=False,
         attention_type="softmax",
         linear_chunk_size=64,
         linear_eps=1e-6,
     ):
         super().__init__()
 
+        # recompute block activations in backward instead of storing them (less memory, ~30% more compute)
+        self.grad_checkpointing = grad_checkpointing
+
         self.vocab_size = vocab_size
         self.d_model = d_model
         self.use_only_rope = use_rope & use_only_rope
+        self.use_alibi = use_alibi
         self.attention_type = attention_type
 
         self.token_embedding = nn.Embedding(vocab_size, d_model)
@@ -43,25 +54,38 @@ class TransformerDecoder(nn.Module):
 
         self.seq_dropout = nn.Dropout(seq_dropout)
 
+        block = lambda: TransformerBlock(
+            d_model=d_model,
+            mlp_hidden_dim=mlp_hidden_dim if mlp_hidden_dim is not None else 4 * d_model,
+            num_heads=num_heads,
+            ffn_dropout=ffn_dropout,
+            attn_dropout=attn_dropout,
+            use_rope=use_rope,
+            rope_base=rope_base,
+            max_seq_len=max_seq_len,
+            use_headwise_gate=use_headwise_gate,
+            use_elementwise_gate=use_elementwise_gate,
+            use_alibi=use_alibi,
+            attention_type=attention_type,
+            linear_chunk_size=linear_chunk_size,
+            linear_eps=linear_eps,
+        )
         self.transformer_blocks = torch.nn.ModuleList([
-            TransformerBlock(
-                d_model=d_model,
-                mlp_hidden_dim=mlp_hidden_dim if mlp_hidden_dim is not None else 4 * d_model,
-                num_heads=num_heads,
-                ffn_dropout=ffn_dropout,
-                attn_dropout=attn_dropout,
-                use_rope=use_rope,
-                rope_base=rope_base,
-                max_seq_len=max_seq_len,
-                use_headwise_gate=use_headwise_gate,
-                use_elementwise_gate=use_elementwise_gate,
-                attention_type=attention_type,
-                linear_chunk_size=linear_chunk_size,
-                linear_eps=linear_eps,
-            ) for _ in range(num_layers)
+            block() for _ in range(num_layers)
         ])
 
-        self.final_norm = nn.LayerNorm(d_model)
+        # None: plain next-token model (single final norm, logits [B, L, V])
+        # int:  multi-token prediction with that many heads (logits [B, N, L, V])
+        self.n_future_tokens = n_future_tokens
+        if n_future_tokens is None:
+            self.final_norm = nn.LayerNorm(d_model)
+        else:
+            self.mtps = nn.ModuleList([
+                nn.Sequential(
+                    block(),
+                    nn.LayerNorm(d_model)
+                ) for _ in range(n_future_tokens)
+            ])
 
         self.apply(self._init_weights)
 
@@ -90,14 +114,14 @@ class TransformerDecoder(nn.Module):
         self._init_weights(self.token_embedding)
 
 
-    def forward(self, seq, **batch):
+    def forward(self, seq, prefix_depth=None, **batch):
         # seq: [B, L] (already tokenized)
 
         B, L = seq.shape
         device = seq.device
 
         pos = torch.arange(L, device=device)
-        if self.use_only_rope:
+        if self.use_only_rope or self.use_alibi:
             pos_embed = torch.zeros(1, device=device)
         elif self.use_trainable_pos_embeds:
             pos_embed = self.pos_embedding(pos)
@@ -115,17 +139,39 @@ class TransformerDecoder(nn.Module):
         seq = seq + pos_embed
         seq = self.seq_dropout(seq)
 
-        for block in self.transformer_blocks:
-            seq = block(seq)
+        if prefix_depth is None:
+            blocks = self.transformer_blocks
+        else:
+            blocks = self.transformer_blocks[:prefix_depth]
 
-        embeds = self.final_norm(seq)
-        logits = embeds @ self.token_embedding.weight.T
+        for block in blocks:
+            seq = self._maybe_checkpoint(block, seq)
 
-        return logits
+        if self.n_future_tokens is None:
+            return self.final_norm(seq) @ self.token_embedding.weight.T
+
+        logits = []
+        for headnorm in self.mtps:
+            logits.append(self._maybe_checkpoint(self._head_logits, headnorm, seq))
+        return torch.stack(logits, dim=1)  # [B, N, L, Vocab]
+
+    def _head_logits(self, headnorm, seq):
+        return headnorm(seq) @ self.token_embedding.weight.T
+
+    def _maybe_checkpoint(self, fn, *args):
+        # only stores fn's inputs; everything inside fn is recomputed during backward
+        # (dropout masks are reproduced: checkpoint restores the RNG state)
+        if self.grad_checkpointing and self.training and torch.is_grad_enabled():
+            return checkpoint(fn, *args, use_reentrant=False)
+        return fn(*args)
+    
 
 
 class GPT(nn.Module):
-    def __init__(self, decoder, tokenizer=None, beam_width=1, beam_temperature=1.0, use_prob_sampling=False, context_len=512, max_new_tokens=1024, top_p=1.0):
+    def __init__(self, decoder, tokenizer=None, beam_width=1, beam_temperature=1.0,
+                 use_prob_sampling=False, context_len=512, max_new_tokens=1024,
+                 top_p=1.0, telescopic=False, telescopic_lambda=1.0,
+                 telescopic_gamma=1.0, predict_prefix_depth=None):
         super().__init__()
 
         self.context_len = context_len
@@ -135,6 +181,10 @@ class GPT(nn.Module):
         self.beam_width = beam_width
         self.beam_temperature = beam_temperature
         self.use_prob_sampling = use_prob_sampling
+        self.telescopic = telescopic
+        self.telescopic_lambda = telescopic_lambda
+        self.telescopic_gamma = telescopic_gamma
+        self.predict_prefix_depth = predict_prefix_depth
         self.top_p = top_p
 
     def _set_tokenizer(self, tokenizer):
@@ -144,11 +194,31 @@ class GPT(nn.Module):
         if hasattr(self.decoder, "_set_context"):
             self.decoder._set_context(**context)
 
+    def forward(self, seq, inference=False, **batch):
+        if inference and self.telescopic:
+            num_blocks = len(self.decoder.transformer_blocks)
+            all_logits = torch.stack(
+                [
+                    self.decoder(seq, prefix_depth=k)
+                    for k in range(1, num_blocks + 1)
+                ]
+            )
+            return {"all_logits": all_logits, "logits": all_logits[-1]}
 
-    def forward(self, seq, **batch):
-        # seq: [B, L] (already tokenized)
+        logits = self.decoder(seq, **batch)
 
-        return {'logits': self.decoder(seq, **batch)}
+        if self.decoder.n_future_tokens is None:
+            outputs = {'logits': logits}  # [B, L, Vocab]
+        else:
+            # [B, N, L, Vocab]
+            outputs = {'logits': logits[:, 0], 'mtp_logits': logits}
+
+        if self.telescopic and self.training:
+            prefix_depth = random.randint(1, len(self.decoder.transformer_blocks))
+            outputs['prefix_logits'] = self.decoder(seq, prefix_depth=prefix_depth, **batch)
+            outputs['prefix_depth'] = prefix_depth
+
+        return outputs
 
     @torch.no_grad()
     def predict(self, seq, **batch):
@@ -166,7 +236,8 @@ class GPT(nn.Module):
                 break
 
             x = beams[:, -self.context_len:]
-            logits = self.decoder(x, **batch)[:, -1, :]
+            logits = self.decoder(x, prefix_depth=self.predict_prefix_depth, **batch)
+            logits = logits[:, -1, :] if logits.ndim == 3 else logits[:, 0, -1, :]
             log_probs = torch.log_softmax(logits.float() / self.beam_temperature, dim=-1)
 
             if self.use_prob_sampling and self.top_p < 1:

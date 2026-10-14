@@ -1,0 +1,6 @@
+device: "auto"
+train: []
+inference:
+  - _target_: src.metrics.telescopic_metric.telescopic_metric
+    name: "telescopic_ce"
+    ignore_index: 0

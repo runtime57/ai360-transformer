@@ -1,0 +1,7 @@
+defaults:
+  - gpt
+  - _self_
+
+decoder:
+  attn_dropout: 0.0
+  n_future_tokens: ${n_future_tokens}

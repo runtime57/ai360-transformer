@@ -236,7 +236,7 @@ class BaseTrainer:
                 )
             except torch.cuda.OutOfMemoryError as e:
                 if self.skip_oom:
-                    self.logger.warning("OOM on batch. Skipping batch.")
+                    self.logger.warning(f"OOM on batch. Skipping batch. {e}")
                     torch.cuda.empty_cache()  # free some memory
                     continue
                 else:

@@ -1,0 +1,5 @@
+defaults:
+  - cometml
+  - _self_
+
+loss_names: ["loss", "loss_0", "loss_1", "loss_2", "loss_3"]

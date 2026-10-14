@@ -114,6 +114,10 @@ outputs/
 __MACOSX/
 
 data/tokenizer/
+
+# local environment / WSL ROCm setup artifacts
+.rocm-setup/
+scripts/
 work/
 results/
 
