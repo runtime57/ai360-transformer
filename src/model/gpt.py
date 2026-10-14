@@ -28,7 +28,10 @@ class TransformerDecoder(nn.Module):
         use_headwise_gate=False,
         use_elementwise_gate=False,
         mlp_hidden_dim=None,
-        use_alibi=False
+        use_alibi=False,
+        attention_type="softmax",
+        linear_chunk_size=64,
+        linear_eps=1e-6,
     ):
         super().__init__()
 
@@ -39,6 +42,7 @@ class TransformerDecoder(nn.Module):
         self.d_model = d_model
         self.use_only_rope = use_rope & use_only_rope
         self.use_alibi = use_alibi
+        self.attention_type = attention_type
 
         self.token_embedding = nn.Embedding(vocab_size, d_model)
 
@@ -61,7 +65,10 @@ class TransformerDecoder(nn.Module):
             max_seq_len=max_seq_len,
             use_headwise_gate=use_headwise_gate,
             use_elementwise_gate=use_elementwise_gate,
-            use_alibi=use_alibi
+            use_alibi=use_alibi,
+            attention_type=attention_type,
+            linear_chunk_size=linear_chunk_size,
+            linear_eps=linear_eps,
         )
         self.transformer_blocks = torch.nn.ModuleList([
             block() for _ in range(num_layers)

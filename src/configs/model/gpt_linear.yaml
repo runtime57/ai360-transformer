@@ -1,0 +1,9 @@
+defaults:
+  - gpt
+  - _self_
+
+decoder:
+  attention_type: linear
+  linear_chunk_size: 64
+  linear_eps: 1e-6
+  use_rope: False

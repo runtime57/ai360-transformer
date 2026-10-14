@@ -5,11 +5,22 @@ import torch.nn.functional as F
 from torch import Tensor
 from src.model.transformer_utils.alibi import alibi_bias
 
+from .linear_attention import causal_linear_attention
+
 
 class CausalSelfAttention(nn.Module):
-    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.0, use_rope: bool = False, rope_base: float = 10000.0, max_seq_len: int | None = None, use_headwise_gate: bool = False, use_elementwise_gate: bool = False, use_alibi: bool = False):
+    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.0, use_rope: bool = False, rope_base: float = 10000.0, max_seq_len: int | None = None, use_headwise_gate: bool = False, use_elementwise_gate: bool = False, use_alibi: bool = False, attention_type: str = "softmax", linear_chunk_size: int = 64, linear_eps: float = 1e-6):
         super().__init__()
-        assert d_model % num_heads == 0
+        if num_heads <= 0 or d_model <= 0 or d_model % num_heads:
+            raise ValueError("d_model must be positive and divisible by num_heads")
+        if attention_type not in {"softmax", "linear"}:
+            raise ValueError("attention_type must be 'softmax' or 'linear'")
+        if attention_type == "linear" and use_alibi:
+            raise ValueError("ALiBi bias requires softmax attention; disable use_alibi for linear")
+        if linear_chunk_size <= 0 or not linear_eps > 0:
+            raise ValueError("linear_chunk_size and linear_eps must be positive")
+        if not 0 <= dropout < 1:
+            raise ValueError("dropout must be in [0, 1)")
         assert not (use_headwise_gate and use_elementwise_gate)
 
         self.d_model = d_model
@@ -19,7 +30,11 @@ class CausalSelfAttention(nn.Module):
         self.use_rope = use_rope
         self.rope_base = rope_base
         self.max_seq_len = max_seq_len
-        assert not use_rope or self.head_dim % 2 == 0
+        self.attention_type = attention_type
+        self.linear_chunk_size = linear_chunk_size
+        self.linear_eps = linear_eps
+        if use_rope and (self.head_dim % 2 or rope_base <= 0):
+            raise ValueError("RoPE requires an even head_dim and positive rope_base")
 
         self.use_alibi = use_alibi
 
@@ -41,13 +56,28 @@ class CausalSelfAttention(nn.Module):
         if not self.use_rope:
             return None, None
 
-        positions = torch.arange(self.max_seq_len, dtype=torch.float32)
+        positions = torch.arange(self.max_seq_len or 0, dtype=torch.float32)
         dim_indices = torch.arange(0, self.head_dim, 2, dtype=torch.float32)
         inv_freq = self.rope_base ** (-dim_indices / self.head_dim)
 
         angles = positions[:, None] * inv_freq[None, :]
 
         return angles.cos(), angles.sin()
+
+    def _rotate_queries_and_keys(self, q, k):
+        length = q.shape[-2]
+        if self.rope_cos.shape[0] < length:
+            # A cache grown during generation must also work in later training.
+            with torch.inference_mode(False):
+                positions = torch.arange(length, device=q.device, dtype=torch.float32)
+                dims = torch.arange(
+                    0, self.head_dim, 2, device=q.device, dtype=torch.float32
+                )
+                angles = positions[:, None] * self.rope_base ** (-dims / self.head_dim)
+                self.rope_cos, self.rope_sin = angles.cos(), angles.sin()
+        cos = self.rope_cos[:length].to(dtype=q.dtype)[None, None]
+        sin = self.rope_sin[:length].to(dtype=q.dtype)[None, None]
+        return self.apply_rope(q, cos, sin), self.apply_rope(k, cos, sin)
 
     @staticmethod
     def apply_rope(x: Tensor, cos: Tensor, sin: Tensor):
@@ -77,23 +107,27 @@ class CausalSelfAttention(nn.Module):
         if self.gate is not None:
             gate = torch.sigmoid(self.gate(x))
 
-        if self.use_rope:
-            cos = self.rope_cos[:T].to(dtype=q.dtype)[None, None, :, :]
-            sin = self.rope_sin[:T].to(dtype=q.dtype)[None, None, :, :]
-
-            q = self.apply_rope(q, cos, sin)
-            k = self.apply_rope(k, cos, sin)
-
-        attn_mask = None
-        if self.use_alibi:
-            attn_mask = alibi_bias(self.num_heads, T, x.device).to(q.dtype)
-
-        y = F.scaled_dot_product_attention(
-            q, k, v,
-            attn_mask=attn_mask,
-            dropout_p=self.dropout if self.training else 0.0,
-            is_causal=not self.use_alibi,
-        )
+        if self.attention_type == "linear":
+            y = causal_linear_attention(
+                q, k, v,
+                chunk_size=self.linear_chunk_size,
+                eps=self.linear_eps,
+                dropout_p=self.dropout,
+                training=self.training,
+                rotary=self._rotate_queries_and_keys if self.use_rope else None,
+            )
+        else:
+            if self.use_rope:
+                q, k = self._rotate_queries_and_keys(q, k)
+            attn_mask = None
+            if self.use_alibi:
+                attn_mask = alibi_bias(self.num_heads, T, x.device).to(q.dtype)
+            y = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=attn_mask,
+                dropout_p=self.dropout if self.training else 0.0,
+                is_causal=not self.use_alibi,
+            )
 
         if self.gate is not None:
             y = y * gate.view(B, T, self.num_heads, -1).transpose(1, 2)
@@ -132,11 +166,14 @@ class TransformerBlock(nn.Module):
         max_seq_len: int | None = None,
         use_headwise_gate: bool = False,
         use_elementwise_gate: bool = False,
-        use_alibi: bool = False
+        use_alibi: bool = False,
+        attention_type: str = "softmax",
+        linear_chunk_size: int = 64,
+        linear_eps: float = 1e-6,
     ):
         super().__init__()
         self.norm1 = nn.LayerNorm(d_model)
-        self.attention = CausalSelfAttention(d_model, num_heads, attn_dropout, use_rope, rope_base, max_seq_len, use_headwise_gate, use_elementwise_gate, use_alibi)
+        self.attention = CausalSelfAttention(d_model, num_heads, attn_dropout, use_rope, rope_base, max_seq_len, use_headwise_gate, use_elementwise_gate, use_alibi, attention_type=attention_type, linear_chunk_size=linear_chunk_size, linear_eps=linear_eps)
         self.attn_dropout = nn.Dropout(attn_dropout)
 
         self.norm2 = nn.LayerNorm(d_model)

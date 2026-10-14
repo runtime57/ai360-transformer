@@ -114,6 +114,9 @@ Installation may depend on your task. The general steps are the following:
 
 ## How To Use
 
+Linear attention training, quality evaluation and performance benchmarks:
+[Linear attention experiments](LINEAR_ATTENTION.md).
+
 To train a model, run the following command:
 
 ```bash

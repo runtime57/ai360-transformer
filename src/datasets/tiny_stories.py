@@ -32,8 +32,16 @@ class TinyStoriesDataset:
         tokenization_workers=4,
         transforms=None,
         max_stories=None,
+        limit_stories=None,
     ):
         assert part in ['train', 'val', 'test']
+        # Compatibility with checkpoints/configs from the original linear branch.
+        if limit_stories is not None:
+            if max_stories is not None and max_stories != limit_stories:
+                raise ValueError("max_stories and limit_stories must agree")
+            max_stories = limit_stories
+        if max_stories is not None and max_stories <= 0:
+            raise ValueError("max_stories must be positive or None")
 
         data_dir = ROOT_PATH / "data" / "tiny_story"
 
@@ -127,11 +135,12 @@ class TinyStoriesDataset:
         stories = self.stories
         if self.max_stories is not None:
             stories = stories.select(range(min(self.max_stories, len(stories))))
+        workers = min(self.tokenization_workers, len(stories))
         tokenized = stories.map(
             self.tokenize_stories,
             batched=True,
             batch_size=1000,
-            num_proc=min(self.tokenization_workers, len(stories)),
+            num_proc=workers if workers > 1 else None,
             fn_kwargs={"tokenizer": tokenizer},
             remove_columns=stories.column_names,
             desc=f"Tokenizing {self.part}",
